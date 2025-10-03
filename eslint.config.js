@@ -19,6 +19,7 @@ const eslintConfig = config(
       "**/.tmp/",
       "**/.yarn/",
       "**/coverage/",
+      "**/.husky/**",
     ],
   },
   {

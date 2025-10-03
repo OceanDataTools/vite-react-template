@@ -1,11 +1,11 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice } from "@reduxjs/toolkit"
 import {
   fetchApiKeysThunk,
   fetchRoutesThunk,
   createApiKeyThunk,
   revokeApiKeyThunk,
-  deleteApiKeyThunk
-} from "./apikeyThunks";
+  deleteApiKeyThunk,
+} from "./apikeyThunks"
 
 const initialState = {
   keys: [],
@@ -13,52 +13,52 @@ const initialState = {
   loading: false,
   error: null,
   revealedKey: null,
-};
+}
 
 export const apikeySlice = createSlice({
   name: "apikeys",
   initialState,
   reducers: {
     clearRevealedKey(state) {
-      state.revealedKey = null;
-    }
+      state.revealedKey = null
+    },
   },
-  extraReducers: (builder) => {
+  extraReducers: builder => {
     builder
-      .addCase(fetchApiKeysThunk.pending, (state) => {
-        state.loading = true;
-        state.error = null;
+      .addCase(fetchApiKeysThunk.pending, state => {
+        state.loading = true
+        state.error = null
       })
       .addCase(fetchApiKeysThunk.fulfilled, (state, action) => {
-        state.loading = false;
-        state.keys = action.payload;
+        state.loading = false
+        state.keys = action.payload
       })
       .addCase(fetchRoutesThunk.fulfilled, (state, action) => {
-        state.routes = action.payload;
+        state.routes = action.payload
       })
       .addCase(createApiKeyThunk.fulfilled, (state, action) => {
-        state.keys.push(action.payload);
-        state.revealedKey = action.payload.unhashed_key;
+        state.keys.push(action.payload)
+        state.revealedKey = action.payload.unhashed_key
       })
       .addCase(revokeApiKeyThunk.fulfilled, (state, action) => {
         // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
-        const key = state.keys.find(k => k.id === action.payload);
-        
+        const key = state.keys.find(k => k.id === action.payload)
+
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (key) key.revoked = true;
+        if (key) key.revoked = true
       })
       .addCase(deleteApiKeyThunk.fulfilled, (state, action) => {
-        state.keys = state.keys.filter(k => k.id !== action.payload);
+        state.keys = state.keys.filter(k => k.id !== action.payload)
       })
       .addMatcher(
-        (action) => void action.type.endsWith("/rejected"),
+        action => void action.type.endsWith("/rejected"),
         (state, action) => {
-          state.loading = false;
-          state.error = action.error.message ?? "Error occurred";
-        }
-      );
+          state.loading = false
+          state.error = action.error.message ?? "Error occurred"
+        },
+      )
   },
-});
+})
 
-export const { clearRevealedKey } = apikeySlice.actions;
-export default apikeySlice.reducer;
+export const { clearRevealedKey } = apikeySlice.actions
+export default apikeySlice.reducer

@@ -1,29 +1,29 @@
 import type { JSX } from "react"
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { useAppDispatch, useAppSelector } from "../app/hooks";
-import { AppConfig } from "../config";
-import { loginThunk } from "../features/auth/authThunks"; // adjust path as needed
+import { useState } from "react"
+import { useNavigate, Link } from "react-router-dom"
+import { useAppDispatch, useAppSelector } from "../app/hooks"
+import { AppConfig } from "../config"
+import { loginThunk } from "../features/auth/authThunks" // adjust path as needed
 
 export const LoginForm = (): JSX.Element => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const dispatch = useAppDispatch();
-  const navigate = useNavigate();
+  const [username, setUsername] = useState("")
+  const [password, setPassword] = useState("")
+  const dispatch = useAppDispatch()
+  const navigate = useNavigate()
 
-  const { loading, error, token } = useAppSelector((state) => state.auth);  // eslint-disable-line @typescript-eslint/no-unused-vars
+  const { loading, error, token } = useAppSelector(state => state.auth) // eslint-disable-line @typescript-eslint/no-unused-vars
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!username || !password) return;
+  const handleSubmit = async e => {
+    e.preventDefault()
+    if (!username || !password) return
 
     try {
-      await dispatch(loginThunk({ username, password })).unwrap();
-      await navigate("/");
+      await dispatch(loginThunk({ username, password })).unwrap()
+      await navigate("/")
     } catch (err) {
-      console.error("Login failed:", err);
+      console.error("Login failed:", err)
     }
-  };
+  }
 
   return (
     <form
@@ -37,7 +37,9 @@ export const LoginForm = (): JSX.Element => {
         type="text"
         placeholder="Username"
         value={username}
-        onChange={(e) => { setUsername(e.target.value); }}
+        onChange={e => {
+          setUsername(e.target.value)
+        }}
         className="border p-2 mb-3 w-full rounded"
         disabled={loading}
       />
@@ -45,7 +47,9 @@ export const LoginForm = (): JSX.Element => {
         type="password"
         placeholder="Password"
         value={password}
-        onChange={(e) => { setPassword(e.target.value); }}
+        onChange={e => {
+          setPassword(e.target.value)
+        }}
         className="border p-2 mb-4 w-full rounded"
         disabled={loading}
       />
@@ -56,14 +60,14 @@ export const LoginForm = (): JSX.Element => {
       >
         {loading ? "Logging in..." : "Login"}
       </button>
-      {(AppConfig.allowSelfRegister) ?
-      <Link
-        to="/register"
-        className="block mt-4 text-center text-sm hover:text-primary"
-      >
-        Register
-      </Link>
-      : null}
+      {AppConfig.allowSelfRegister ? (
+        <Link
+          to="/register"
+          className="block mt-4 text-center text-sm hover:text-primary"
+        >
+          Register
+        </Link>
+      ) : null}
       <Link
         to="/forgot-password"
         className="block mt-4 text-center text-sm hover:text-primary"
@@ -71,11 +75,11 @@ export const LoginForm = (): JSX.Element => {
         Forgot Password
       </Link>
     </form>
-  );
-};
+  )
+}
 
 // login
 // border p-2 mb-3 w-full rounded
 
 // register
-// border p-2 mb-3 w-full rounded 
+// border p-2 mb-3 w-full rounded

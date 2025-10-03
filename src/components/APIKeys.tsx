@@ -1,86 +1,94 @@
-import { useEffect, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCopy } from "@fortawesome/free-solid-svg-icons";
-import { useAppDispatch, useAppSelector } from "../app/hooks";
+import { useEffect, useState } from "react"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faCopy } from "@fortawesome/free-solid-svg-icons"
+import { useAppDispatch, useAppSelector } from "../app/hooks"
 import {
   fetchApiKeysThunk,
   fetchRoutesThunk,
   createApiKeyThunk,
   revokeApiKeyThunk,
   deleteApiKeyThunk,
-} from "../features/apikeys/apikeyThunks";
-import { clearRevealedKey } from "../features/apikeys/apikeySlice";
-import type { RootState } from "../app/store";
-import { getDialog } from "../utils/modals";
-import DeleteConfirmModal from "./DeleteConfirmModal";
-import CreateApiKeyModal from "./CreateApiKeyModal";
+} from "../features/apikeys/apikeyThunks"
+import { clearRevealedKey } from "../features/apikeys/apikeySlice"
+import type { RootState } from "../app/store"
+import { getDialog } from "../utils/modals"
+import DeleteConfirmModal from "./DeleteConfirmModal"
+import CreateApiKeyModal from "./CreateApiKeyModal"
 
 type Permission = {
-  route: string;
-  method: string;
-};
+  route: string
+  method: string
+}
 
 type CreateKeyFormValues = {
-  keyName: string;
-  permissions: Permission[];
+  keyName: string
+  permissions: Permission[]
 }
 
 const ApiKeys = () => {
-  const dispatch = useAppDispatch();
-  const { keys, routes, revealedKey } = useAppSelector((state: RootState) => state.apikeys);
+  const dispatch = useAppDispatch()
+  const { keys, routes, revealedKey } = useAppSelector(
+    (state: RootState) => state.apikeys,
+  )
 
-  const [formError, setFormError] = useState<string | undefined>();
-  const [keyToDelete, setKeyToDelete] = useState<string | null>(null);
-  const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
-  const [copied, setCopied] = useState(false);
+  const [formError, setFormError] = useState<string | undefined>()
+  const [keyToDelete, setKeyToDelete] = useState<string | null>(null)
+  const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    void dispatch(fetchApiKeysThunk());
-    void dispatch(fetchRoutesThunk());
-  }, [dispatch]);
+    void dispatch(fetchApiKeysThunk())
+    void dispatch(fetchRoutesThunk())
+  }, [dispatch])
 
-  const handleCreateKey = async (data: CreateKeyFormValues): Promise<boolean> => {
-    const trimmedName = data.keyName.trim();
-    setFormError(undefined);
+  const handleCreateKey = async (
+    data: CreateKeyFormValues,
+  ): Promise<boolean> => {
+    const trimmedName = data.keyName.trim()
+    setFormError(undefined)
 
-    if (keys.some((key) => key.name === trimmedName)) {
-      setFormError("A key with that name already exists.");
-      return false;
+    if (keys.some(key => key.name === trimmedName)) {
+      setFormError("A key with that name already exists.")
+      return false
     }
 
-    await dispatch(createApiKeyThunk({ name: trimmedName, permissions: data.permissions }));
+    await dispatch(
+      createApiKeyThunk({ name: trimmedName, permissions: data.permissions }),
+    )
 
-    const revealModal = getDialog("reveal_apikey_modal");
-    revealModal?.showModal();
+    const revealModal = getDialog("reveal_apikey_modal")
+    revealModal?.showModal()
 
-    return true;
-  };
+    return true
+  }
 
   const handleDeleteClick = (id: string) => {
-    setKeyToDelete(id);
-    setDeleteModalOpen(true);
-  };
+    setKeyToDelete(id)
+    setDeleteModalOpen(true)
+  }
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(revealedKey);
-      setCopied(true);
-      setTimeout(() => { setCopied(false); }, 2000); // reset after 2s
+      await navigator.clipboard.writeText(revealedKey)
+      setCopied(true)
+      setTimeout(() => {
+        setCopied(false)
+      }, 2000) // reset after 2s
     } catch (err) {
-      console.error("Failed to copy:", err);
+      console.error("Failed to copy:", err)
     }
-  };
+  }
 
   const confirmDelete = async () => {
-    if (!keyToDelete) return;
-    await dispatch(deleteApiKeyThunk(keyToDelete));
-    setKeyToDelete(null);
-    setDeleteModalOpen(false);
-  };
+    if (!keyToDelete) return
+    await dispatch(deleteApiKeyThunk(keyToDelete))
+    setKeyToDelete(null)
+    setDeleteModalOpen(false)
+  }
 
   const cancelDelete = () => {
-    setDeleteModalOpen(false);
-  };
+    setDeleteModalOpen(false)
+  }
 
   return (
     <div className="mt-4">
@@ -94,7 +102,7 @@ const ApiKeys = () => {
             </tr>
           </thead>
           <tbody>
-            {keys.map((key) => (
+            {keys.map(key => (
               <tr key={key.id}>
                 <td>{key.name ?? "(No name)"}</td>
                 <td>{new Date(key.created_at).toISOString()}</td>
@@ -107,7 +115,9 @@ const ApiKeys = () => {
                   </button>
                   <button
                     className="btn text-error btn-xs btn-ghost"
-                    onClick={() => { handleDeleteClick(key.id); }}
+                    onClick={() => {
+                      handleDeleteClick(key.id)
+                    }}
                   >
                     Delete
                   </button>
@@ -120,7 +130,11 @@ const ApiKeys = () => {
 
       <button
         className="btn btn-primary btn-sm mt-2"
-        onClick={() => { (document.getElementById("create_apikey_modal") as HTMLDialogElement).showModal(); }}
+        onClick={() => {
+          ;(
+            document.getElementById("create_apikey_modal") as HTMLDialogElement
+          ).showModal()
+        }}
       >
         Create API Key
       </button>
@@ -151,7 +165,7 @@ const ApiKeys = () => {
           </div>
           <div className="modal-action flex justify-between items-center w-full">
             <p className="text-xs text-success">
-              {copied && ( "Copied to clipboard!" )}
+              {copied && "Copied to clipboard!"}
             </p>
             <form method="dialog">
               <button
@@ -173,7 +187,7 @@ const ApiKeys = () => {
         onCancel={cancelDelete}
       />
     </div>
-  );
+  )
 }
 
-export default ApiKeys;
+export default ApiKeys

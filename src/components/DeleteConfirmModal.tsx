@@ -1,10 +1,10 @@
-import type React from "react";
+import type React from "react"
 
 type DeleteConfirmModalProps = {
-  isOpen: boolean;
-  itemName?: string;
-  onConfirm: () => void;
-  onCancel: () => void;
+  isOpen: boolean
+  itemName?: string
+  onConfirm: () => void
+  onCancel: () => void
 }
 
 const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
@@ -13,7 +13,7 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
   onConfirm,
   onCancel,
 }) => {
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   return (
     <dialog className="modal modal-open">
@@ -21,8 +21,8 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
         <h3 className="font-bold text-lg">Confirm Delete</h3>
         <p className="py-4">
           Are you sure you want to delete{" "}
-          <span className="font-semibold">{itemName ?? "this item"}</span>?  
-          This action cannot be undone.
+          <span className="font-semibold">{itemName ?? "this item"}</span>? This
+          action cannot be undone.
         </p>
         <div className="modal-action">
           <button className="btn btn-outline btn-sm" onClick={onCancel}>
@@ -34,7 +34,7 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
         </div>
       </div>
     </dialog>
-  );
-};
+  )
+}
 
-export default DeleteConfirmModal;
+export default DeleteConfirmModal

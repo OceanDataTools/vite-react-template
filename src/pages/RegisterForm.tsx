@@ -1,107 +1,116 @@
 // src/pages/RegisterForm.tsx
-import type { JSX } from "react";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import type { RootState } from "../app/store";
-import { useAppDispatch, useAppSelector } from "../app/hooks";
-import { useNavigate, Link } from "react-router-dom";
-import { registerUserThunk } from "../features/auth/authThunks";
-import { apiUrl } from "../utils/api"; // Helper to prefix API URLs
+import type { JSX } from "react"
+import { useState } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
+import type { RootState } from "../app/store"
+import { useAppDispatch, useAppSelector } from "../app/hooks"
+import { useNavigate, Link } from "react-router-dom"
+import { registerUserThunk } from "../features/auth/authThunks"
+import { apiUrl } from "../utils/api" // Helper to prefix API URLs
 
 // form validation schema
 const registerSchema = z
-.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  full_name: z.string().optional().or(z.literal("")),
-  email: z.email("Invalid email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string(),
-})
-.superRefine(async (data, ctx) => {
-  // Username availability check
-  if (data.username) {
-    try {
-      const res = await fetch(apiUrl(`/users/available?username=${encodeURIComponent(data.username)}`));
-      if (!res.ok) throw new Error("SERVER_ERROR");
-      const json = await res.json();
-      if (!json.available) {
+  .object({
+    username: z.string().min(3, "Username must be at least 3 characters"),
+    full_name: z.string().optional().or(z.literal("")),
+    email: z.email("Invalid email"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string(),
+  })
+  .superRefine(async (data, ctx) => {
+    // Username availability check
+    if (data.username) {
+      try {
+        const res = await fetch(
+          apiUrl(
+            `/users/available?username=${encodeURIComponent(data.username)}`,
+          ),
+        )
+        if (!res.ok) throw new Error("SERVER_ERROR")
+        const json = await res.json()
+        if (!json.available) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["username"],
+            message: "Username is already taken",
+          })
+        }
+      } catch {
         ctx.addIssue({
           code: "custom",
           path: ["username"],
-          message: "Username is already taken",
-        });
+          message: "Could not validate username",
+        })
       }
-    } catch {
-      ctx.addIssue({
-        code: "custom",
-        path: ["username"],
-        message: "Could not validate username",
-      });
     }
-  }
 
-  // Email availability check
-  if (data.email) {
-    try {
-      const res = await fetch(apiUrl(`/users/available?email=${encodeURIComponent(data.email)}`));
-      if (!res.ok) throw new Error("SERVER_ERROR");
-      const json = await res.json();
-      if (!json.available) {
+    // Email availability check
+    if (data.email) {
+      try {
+        const res = await fetch(
+          apiUrl(`/users/available?email=${encodeURIComponent(data.email)}`),
+        )
+        if (!res.ok) throw new Error("SERVER_ERROR")
+        const json = await res.json()
+        if (!json.available) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["email"],
+            message: "Email is already taken",
+          })
+        }
+      } catch {
         ctx.addIssue({
           code: "custom",
           path: ["email"],
-          message: "Email is already taken",
-        });
+          message: "Could not validate email",
+        })
       }
-    } catch {
+    }
+
+    // Password confirmation check
+    if (data.password !== data.confirmPassword) {
       ctx.addIssue({
         code: "custom",
-        path: ["email"],
-        message: "Could not validate email",
-      });
+        path: ["confirmPassword"],
+        message: "Passwords do not match",
+      })
     }
-  }
+  })
 
-  // Password confirmation check
-  if (data.password !== data.confirmPassword) {
-    ctx.addIssue({
-      code: "custom",
-      path: ["confirmPassword"],
-      message: "Passwords do not match",
-    });
-  }
-});
-
-type RegisterFormValues = z.infer<typeof registerSchema>;
-
+type RegisterFormValues = z.infer<typeof registerSchema>
 
 export const RegisterForm = (): JSX.Element => {
-  const dispatch = useAppDispatch();
-  const navigate = useNavigate();
-  const [resMessage, setResMessage] = useState();
-  const { loading, error } = useAppSelector((state: RootState) => state.auth);  // eslint-disable-line @typescript-eslint/no-unused-vars
+  const dispatch = useAppDispatch()
+  const navigate = useNavigate()
+  const [resMessage, setResMessage] = useState()
+  const { loading, error } = useAppSelector((state: RootState) => state.auth) // eslint-disable-line @typescript-eslint/no-unused-vars
 
-  const { register, handleSubmit, formState: { errors, isSubmitting, isValid } } = useForm<RegisterFormValues>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting, isValid },
+  } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     mode: "onChange",
-  });
+  })
 
   const onSubmit = async (data: RegisterFormValues) => {
-    const result = await dispatch(registerUserThunk(data));
+    const result = await dispatch(registerUserThunk(data))
     if (registerUserThunk.fulfilled.match(result)) {
-      setResMessage("User registration successful!");
-      setTimeout(() => navigate("/login"), 2000);
+      setResMessage("User registration successful!")
+      setTimeout(() => navigate("/login"), 2000)
     }
-  };
+  }
 
-  return (typeof resMessage === "string")
-   ?  <div className="max-w-sm mx-auto p-4 border rounded shadow mt-20">
-        <h2 className="text-2xl font-bold mb-4 text-center">Register</h2>
-        <p className="text-success text-center mt-1">{ resMessage }</p>
-      </div>
-   : (
+  return typeof resMessage === "string" ? (
+    <div className="max-w-sm mx-auto p-4 border rounded shadow mt-20">
+      <h2 className="text-2xl font-bold mb-4 text-center">Register</h2>
+      <p className="text-success text-center mt-1">{resMessage}</p>
+    </div>
+  ) : (
     <form
       onSubmit={handleSubmit(onSubmit)}
       className="max-w-sm mx-auto p-4 border rounded shadow mt-20"
@@ -160,7 +169,9 @@ export const RegisterForm = (): JSX.Element => {
         }`}
       />
       {errors.confirmPassword && (
-        <p className="text-error text-sm mb-3">{errors.confirmPassword.message}</p>
+        <p className="text-error text-sm mb-3">
+          {errors.confirmPassword.message}
+        </p>
       )}
 
       <button
@@ -177,5 +188,5 @@ export const RegisterForm = (): JSX.Element => {
         Already have an account?
       </Link>
     </form>
-  );
+  )
 }

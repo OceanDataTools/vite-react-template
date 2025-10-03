@@ -1,47 +1,51 @@
 import type { JSX } from "react"
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { useNavigate, Link } from "react-router-dom";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { apiUrl } from "../utils/api";
+import { useState } from "react"
+import { useForm } from "react-hook-form"
+import { useNavigate, Link } from "react-router-dom"
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { apiUrl } from "../utils/api"
 
 // form validation schema
 const forgotPasswordSchema = z.object({
   email: z.email("Invalid email address"),
-});
+})
 
-type ForgotFormValues = z.infer<typeof forgotPasswordSchema>;
+type ForgotFormValues = z.infer<typeof forgotPasswordSchema>
 
 export const ForgotPasswordForm = (): JSX.Element => {
-  const navigate = useNavigate();
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState("");
-  const { register, handleSubmit, formState: { errors, isSubmitting, isValid } } = useForm<ForgotFormValues>({
+  const navigate = useNavigate()
+  const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState("")
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting, isValid },
+  } = useForm<ForgotFormValues>({
     resolver: zodResolver(forgotPasswordSchema),
     mode: "onChange",
-  });
+  })
 
   const onSubmit = async (data: ForgotFormValues) => {
-    setError("");
+    setError("")
     try {
       const res = await fetch(apiUrl("/auth/forgot-password"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      });
+      })
 
       if (!res.ok) {
-        const body = await res.json();
-        throw new Error(body?.detail ?? "Something went wrong");
+        const body = await res.json()
+        throw new Error(body?.detail ?? "Something went wrong")
       }
 
-      setSubmitted(true);
-      setTimeout(() => navigate("/login"), 2000);
+      setSubmitted(true)
+      setTimeout(() => navigate("/login"), 2000)
     } catch (err) {
-      setError((err as Error).message);
+      setError((err as Error).message)
     }
-  };
+  }
 
   return (
     <div className="max-w-sm mx-auto p-4 border rounded shadow mt-20">
@@ -68,9 +72,7 @@ export const ForgotPasswordForm = (): JSX.Element => {
             )}
           </div>
 
-          {error && (
-            <p className="text-error text-sm mb-2">{error}</p>
-          )}
+          {error && <p className="text-error text-sm mb-2">{error}</p>}
 
           <button
             type="submit"
@@ -88,5 +90,5 @@ export const ForgotPasswordForm = (): JSX.Element => {
         </form>
       )}
     </div>
-  );
+  )
 }
