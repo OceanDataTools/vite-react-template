@@ -16,7 +16,7 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
   if (!isOpen) return null
 
   return (
-    <dialog className="modal modal-open">
+    <dialog className="modal" open>
       <div className="modal-box">
         <h3 className="font-bold text-lg">Confirm Delete</h3>
         <p className="py-4">

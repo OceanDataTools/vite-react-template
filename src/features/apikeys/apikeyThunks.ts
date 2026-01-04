@@ -66,6 +66,18 @@ export const createApiKeyThunk = createAsyncThunk<ApiKey[]>(
   },
 )
 
+// Fetch routes for given key
+export const fetchApiKeyRoutesThunk = createAsyncThunk<ApiKey[]>(
+  "apikeys/fetchKeyRoutes",
+  async (id: string, thunkAPI) => {
+    const response = await fetchWithAuth(`/apikeys/${id}/routes`, {}, thunkAPI)
+    if (!response.ok) throw new Error("Failed to fetch routes for specific key")
+
+    const data = (await response.json()) as ApiRoute[]
+    return data
+  },
+)
+
 // Revoke
 export const revokeApiKeyThunk = createAsyncThunk<ApiKey[]>(
   "apikeys/revoke",
@@ -86,6 +98,37 @@ export const revokeApiKeyThunk = createAsyncThunk<ApiKey[]>(
     return data
   },
 )
+
+// Update an existing API key (only expiresAt can be updated)
+export const reissueApiKeyThunk = createAsyncThunk<ApiKey, { id: string; expiresAt: string | null }>(
+  "apikeys/reissue",
+  async ({ id , expiresAt }, thunkAPI) => {
+    const expires_at = expiresAt || null
+
+    const response = await fetchWithAuth(
+      `/apikeys/${id}`, // PATCH endpoint for the API key
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ expires_at }),
+      },
+      thunkAPI,
+    )
+
+    if (!response.ok) {
+      const text = await response.text()
+      throw new Error(`Failed to update API key: ${text}`)
+    }
+
+    const updatedKey = (await response.json()) as ApiKey
+
+    // Optionally refresh the key list
+    await thunkAPI.dispatch(fetchApiKeysThunk())
+
+    return updatedKey
+  }
+)
+
 
 // Delete
 export const deleteApiKeyThunk = createAsyncThunk<ApiKey[]>(
