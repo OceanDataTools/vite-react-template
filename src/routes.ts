@@ -13,11 +13,8 @@ export type NavRoute = {
 }
 
 export const navRoutes: NavRoute[] = [
-  { label: "Admin Only", path: "/private", required_roles: ["admin"], navGroup: "side" },
-  { label: "API Keys",   path: "/apikeys", element: ApiKeyManager,    navGroup: "top" },
-  { label: "Private",   path: "/private",                             navGroup: "side" },
-  { label: "Profile",   path: "/profile",  element: ProfileForm,      navGroup: "top" },
-  { label: "Public",    path: "/public",   isPublic: true,            navGroup: "side" },
+  { label: "API Keys", path: "/apikeys", element: ApiKeyManager, navGroup: "top" },
+  { label: "Profile",  path: "/profile", element: ProfileForm,   navGroup: "top" },
 ]
 
 // Filter routes by nav group and user role, preserving navRoutes order.

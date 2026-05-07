@@ -72,9 +72,9 @@ const MainLayout = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-screen flex flex-col">
       <TopNav />
-      <main className="flex-grow overflow-auto">
+      <main className="flex-1 overflow-auto min-h-0 flex flex-col">
         <Outlet />
       </main>
       <Footer />
