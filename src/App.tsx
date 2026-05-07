@@ -1,6 +1,7 @@
 import { useEffect } from "react"
 import type { JSX } from "react"
 import { useAppDispatch, useAppSelector } from "./app/hooks"
+import { AppConfig } from "./config"
 import {
   BrowserRouter,
   Navigate,
@@ -15,6 +16,8 @@ import MainLayout from "./components/MainLayout"
 import { ForgotPasswordForm } from "./pages/ForgotPasswordForm"
 import { Home } from "./pages/Home"
 import { LoginForm } from "./pages/LoginForm"
+import { LoggerStatusPage } from "./pages/LoggerStatusPage"
+import { LogsPage } from "./pages/LogsPage"
 import { RegisterForm } from "./pages/RegisterForm"
 import { ResetPasswordForm } from "./pages/ResetPasswordForm"
 import { navRoutes } from "./routes"
@@ -43,7 +46,6 @@ type ProtectedRouteProps = {
 }
 
 export const ProtectedRoute = ({ rolesAllowed, element }: ProtectedRouteProps): JSX.Element => {
-   
   const user = useAppSelector((state: RootState) => state.auth.user)
   const location = useLocation()
 
@@ -58,6 +60,10 @@ export const ProtectedRoute = ({ rolesAllowed, element }: ProtectedRouteProps): 
 export const App = () => {
   const dispatch = useAppDispatch()
   const token = useAppSelector((state: RootState) => state.auth.token)
+
+  useEffect(() => {
+    document.title = `${AppConfig.project} v${AppConfig.version}`
+  }, [])
 
   useEffect(() => {
     if (token) void dispatch(fetchUserProfileThunk())
@@ -96,6 +102,8 @@ export const App = () => {
           </Route>
 
           <Route path="/" element={<Home />} />
+          <Route path="/logs" element={<LogsPage />} />
+          <Route path="/status" element={<LoggerStatusPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
