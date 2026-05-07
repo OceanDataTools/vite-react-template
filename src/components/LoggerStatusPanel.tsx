@@ -41,7 +41,7 @@ export function LoggerStatusPanel({
   const logEntries      = useAppSelector((s: RootState) => s.openrvdas.logEntries)
 
   const modalRef = useRef<HTMLDialogElement>(null)
-  const logBottomRef = useRef<HTMLDivElement>(null)
+  const logContainerRef = useRef<HTMLDivElement>(null)
   const [selected, setSelected] = useState<SelectedLogger | null>(null)
   const [configJson, setConfigJson] = useState<string | null>(null)
   const [configLoading, setConfigLoading] = useState(false)
@@ -68,7 +68,7 @@ export function LoggerStatusPanel({
 
   const outerClass = expanded
     ? "flex-1 flex flex-col min-h-0 bg-base-200"
-    : `card bg-base-200 shadow-sm ${fullHeight ? "flex-1 flex flex-col min-h-0" : ""}`
+    : `card bg-base-200 shadow-sm border border-base-300 ${fullHeight ? "flex-1 flex flex-col min-h-0" : ""}`
   const innerClass = expanded
     ? "flex-1 flex flex-col min-h-0 space-y-2 py-3 px-5"
     : `card-body py-3 px-5 space-y-2 ${fullHeight ? "flex-1 flex flex-col min-h-0" : ""}`
@@ -84,7 +84,8 @@ export function LoggerStatusPanel({
     : []
 
   useEffect(() => {
-    logBottomRef.current?.scrollIntoView({ behavior: "instant" })
+    const el = logContainerRef.current
+    if (el) el.scrollTop = el.scrollHeight
   }, [recentEntries.length, selected?.id])
 
   return (
@@ -146,21 +147,21 @@ export function LoggerStatusPanel({
                     const cdsEntry = loggerStatuses[logger.id]
                     const statusIsFresh =
                       logger.active_config != null &&
-                      cdsEntry.config === logger.active_config
-                    const effectiveStatus = statusIsFresh ? cdsEntry.status : null
+                      cdsEntry?.config === logger.active_config
+                    const effectiveStatus = statusIsFresh ? (cdsEntry?.status ?? null) : null
                     const badgeClass = effectiveStatus
                       ? (CDS_STATUS_BADGE[effectiveStatus] ?? "badge-ghost")
                       : (logger.running ? "badge-success" : "badge-ghost")
                     const statusLabel = effectiveStatus ?? (logger.running ? "RUNNING" : "EXITED")
 
                     const lvl = loggerLastLevel[logger.id]
-                    const hasWarning = lvl.levelno >= 30
+                    const hasWarning = lvl != null && lvl.levelno >= 30
                     const isError = hasWarning && lvl.levelno >= 40
 
                     return (
                       <div
                         key={logger.id}
-                        className="bg-base-300 rounded-lg p-3 flex flex-col gap-1 min-w-0 cursor-pointer hover:bg-base-content/10 transition-colors"
+                        className="bg-base-300 border border-base-content/10 p-3 flex flex-col gap-1 min-w-0 cursor-pointer hover:bg-base-content/10 transition-colors"
                         onClick={() => { openModal({ id: logger.id, activeConfig: logger.active_config, statusLabel, badgeClass }); }}
                       >
                         <div className="flex items-center gap-2 min-w-0">
@@ -205,12 +206,11 @@ export function LoggerStatusPanel({
 
               {/* Recent log entries */}
               <h4 className="font-semibold text-sm mb-1 shrink-0">Recent logs</h4>
-              <div className="bg-base-300 rounded-lg p-3 mb-4 overflow-y-auto shrink-0 max-h-48 text-xs">
+              <div ref={logContainerRef} className="bg-base-300 rounded-lg p-3 mb-4 overflow-y-auto shrink-0 max-h-48 text-xs">
                 {recentEntries.length === 0
                   ? <p className="text-xs opacity-40 font-mono">No log entries.</p>
                   : recentEntries.map((e, i) => <EntryRow key={i} entry={e} />)
                 }
-                <div ref={logBottomRef} />
               </div>
 
               {/* Config JSON */}

@@ -102,7 +102,7 @@ export function LogPanel({
 
   const outerClass = expanded
     ? "flex-1 flex flex-col min-h-0 bg-base-200"
-    : `card bg-base-200 shadow-sm ${fullHeight ? "flex-1 flex flex-col min-h-0" : ""}`
+    : `card bg-base-200 shadow-sm border border-base-300 ${fullHeight ? "flex-1 flex flex-col min-h-0" : ""}`
   const innerClass = expanded
     ? "flex-1 flex flex-col min-h-0 space-y-2 py-3 px-5"
     : `card-body py-3 px-5 space-y-2 ${fullHeight ? "flex-1 flex flex-col min-h-0" : ""}`
