@@ -16,6 +16,8 @@ import MainLayout from "./components/MainLayout"
 import { ForgotPasswordForm } from "./pages/ForgotPasswordForm"
 import { Home } from "./pages/Home"
 import { LoginForm } from "./pages/LoginForm"
+import { LoggerStatusPage } from "./pages/LoggerStatusPage"
+import { LogsPage } from "./pages/LogsPage"
 import { RegisterForm } from "./pages/RegisterForm"
 import { ResetPasswordForm } from "./pages/ResetPasswordForm"
 import { navRoutes } from "./routes"
@@ -100,6 +102,8 @@ export const App = () => {
           </Route>
 
           <Route path="/" element={<Home />} />
+          <Route path="/logs" element={<LogsPage />} />
+          <Route path="/status" element={<LoggerStatusPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

@@ -1,10 +1,4 @@
 import type { JSX } from "react"
-import logo from "../assets/nautilus.svg"
+import { Dashboard } from "./Dashboard"
 
-export const Home = (): JSX.Element => (
-  <header className="App-splash">
-    <img src={logo} className="App-logo" alt="logo" />
-    <p>OceanDataTools.org</p>
-    <p>Vite + React + Redux Template</p>
-  </header>
-)
+export const Home = (): JSX.Element => <Dashboard />
