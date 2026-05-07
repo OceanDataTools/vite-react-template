@@ -146,7 +146,7 @@ export const Dashboard = (): JSX.Element => {
       )}
 
       {/* Cruise Info */}
-      <div className="card bg-base-200 shadow-sm">
+      <div className="card bg-base-200 shadow-sm border border-base-300">
         <div className="card-body py-4 px-5">
           <div className="flex items-center justify-between">
             <h2 className="card-title text-base font-semibold">Cruise</h2>
@@ -201,7 +201,7 @@ export const Dashboard = (): JSX.Element => {
       </div>
 
       {/* Mode Selector */}
-      <div className="card bg-base-200 shadow-sm">
+      <div className="card bg-base-200 shadow-sm border border-base-300">
         <div className="card-body py-4 px-5">
           <div className="flex items-center gap-3 mb-2">
             <h2 className="card-title text-base font-semibold">Mode</h2>
@@ -248,7 +248,7 @@ export const Dashboard = (): JSX.Element => {
       </div>
 
       {/* Logger Table */}
-      <div className="card bg-base-200 shadow-sm">
+      <div className="card bg-base-200 shadow-sm border border-base-300">
         <div className="card-body py-4 px-5">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
@@ -293,8 +293,8 @@ export const Dashboard = (): JSX.Element => {
                     // so stale data from the previous config doesn't linger after a reload.
                     const statusIsFresh =
                       logger.active_config != null &&
-                      cdsEntry.config === logger.active_config
-                    const effectiveStatus = statusIsFresh ? cdsEntry.status : null
+                      cdsEntry?.config === logger.active_config
+                    const effectiveStatus = statusIsFresh ? (cdsEntry?.status ?? null) : null
                     const badgeClass = effectiveStatus
                       ? (CDS_STATUS_BADGE[effectiveStatus] ?? "badge-ghost")
                       : (logger.running ? "badge-success" : "badge-ghost")
@@ -305,7 +305,7 @@ export const Dashboard = (): JSX.Element => {
                           <div className="flex items-center gap-1.5">
                             {(() => {
                               const lvl = loggerLastLevel[logger.id]
-                              if (lvl.levelno < 30) return null
+                              if (!lvl || lvl.levelno < 30) return null
                               const isError = lvl.levelno >= 40
                               return (
                                 <button
