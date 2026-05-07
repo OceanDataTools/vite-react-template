@@ -1,14 +1,24 @@
+import type { SerializedError } from "@reduxjs/toolkit"
 import { createSlice } from "@reduxjs/toolkit"
 import {
   fetchApiKeysThunk,
   fetchRoutesThunk,
   fetchApiKeyRoutesThunk,
   createApiKeyThunk,
-  revokeApiKeyThunk,
   deleteApiKeyThunk,
 } from "./apikeyThunks"
+import type { ApiKey, ApiRoute, Permission } from "./apikeyThunks"
 
-const initialState = {
+type ApiKeyState = {
+  keys: ApiKey[]
+  routes: ApiRoute[]
+  currentKeyPermissions: Permission[] | null
+  loading: boolean
+  error: string | null
+  revealedKey: string | null
+}
+
+const initialState: ApiKeyState = {
   keys: [],
   routes: [],
   currentKeyPermissions: null,
@@ -40,14 +50,7 @@ export const apikeySlice = createSlice({
       })
       .addCase(createApiKeyThunk.fulfilled, (state, action) => {
         state.keys.push(action.payload)
-        state.revealedKey = action.payload.unhashed_key
-      })
-      .addCase(revokeApiKeyThunk.fulfilled, (state, action) => {
-        // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
-        const key = state.keys.find(k => k.id === action.payload)
-
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (key) key.revoked = true
+        state.revealedKey = action.payload.unhashed_key ?? null
       })
       .addCase(deleteApiKeyThunk.fulfilled, (state, action) => {
         state.keys = state.keys.filter(k => k.id !== action.payload)
@@ -69,10 +72,10 @@ export const apikeySlice = createSlice({
 
       // --- catch-all rejected matcher ---
       .addMatcher(
-        action => void action.type.endsWith("/rejected"),
+        (action): boolean => (action.type as string).endsWith("/rejected"),
         (state, action) => {
           state.loading = false
-          state.error = action.error.message ?? "Error occurred"
+          state.error = (action as { error?: SerializedError }).error?.message ?? "Error occurred"
         },
       )
   },

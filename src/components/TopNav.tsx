@@ -1,3 +1,4 @@
+import type { JSX } from "react"
 import { NavLink, useLocation } from "react-router-dom"
 import { useAppDispatch, useAppSelector } from "../app/hooks"
 import { logoutThunk } from "../features/auth/authThunks"
@@ -5,68 +6,39 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faUser } from "@fortawesome/free-solid-svg-icons"
 import type { RootState } from "../app/store"
 import { AppConfig } from "../config"
-import { navRoutes, filterAndSortRoutes } from "../routes"
+import { getNavRoutes } from "../routes"
 
 export const TopNav = (): JSX.Element => {
   const location = useLocation()
   const dispatch = useAppDispatch()
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { token, user } = useAppSelector((state: RootState) => state.auth)
+  const { user } = useAppSelector((state: RootState) => state.auth)
   const hideNavPaths = ["/login"]
 
-  const handleLogout = () => {
-    void dispatch(logoutThunk())
-  }
+  const handleLogout = () => void dispatch(logoutThunk())
 
-  // const visibleTopNavLinks = filterAndSortRoutes(navRoutes, ['Public', 'Private'], user)
-  //   .filter(({ isPublic = false }) => {
-  //     if (isPublic && hideNavPaths.includes(location.pathname)) return false
-  //     return true;
-  // })
+  const isDrawer = AppConfig.layout === "drawer"
 
-  const visibleDropdownLinks = filterAndSortRoutes(
-    navRoutes,
-    ["Profile", "API Keys"],
-    user,
-  ).filter(({ isPublic = false }) => {
-    if (isPublic && hideNavPaths.includes(location.pathname)) return false
-    return true
-  })
+  const dropdownLinks = getNavRoutes("top", user).filter(
+    ({ isPublic = false }) => !(isPublic && hideNavPaths.includes(location.pathname))
+  )
+
+  const navBarLinks = getNavRoutes("side", user).filter(
+    ({ isPublic = false }) => !(isPublic && hideNavPaths.includes(location.pathname))
+  )
+
+  const topBarLinks = getNavRoutes("topbar", user).filter(
+    ({ isPublic = false }) => !(isPublic && hideNavPaths.includes(location.pathname))
+  )
 
   return (
-    <div className="navbar bg-base-300 shadow-sm py-0">
-      {/*Sidebar Toggle*/}
-      {/*      { user ? (
-        <div className="flex-none xl:hidden">
-          <label htmlFor="sidebar-drawer" aria-label="open sidebar" className="btn btn-square btn-ghost">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              className="inline-block h-6 w-6 stroke-current"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4 6h16M4 12h16M4 18h16"
-              ></path>
-            </svg>
-          </label>
-        </div>
-        ) : null }
-*/}{" "}
-      {/*Sidebar Toggle*/}
+    <div className="navbar bg-base-300 shadow-sm py-0 min-h-12">
       <div className="navbar-start">
         <NavLink to="/">
-          {" "}
-          {/* add className="xl:hidden" for sidebar */}
           <svg
             className="text-base-content"
-            width="140"
-            height="40"
-            viewBox="0 0 200 50"
+            width="300"
+            height="50"
+            viewBox="0 0 300 50"
             xmlns="http://www.w3.org/2000/svg"
           >
             <image href={AppConfig.logo} x="0" y="0" height="50" width="50" />
@@ -79,43 +51,66 @@ export const TopNav = (): JSX.Element => {
               fill="currentColor"
             >
               {AppConfig.project}
+              {AppConfig.version && (
+                <tspan fontSize="13" fontWeight="normal" opacity="0.5" dx="8">
+                  v{AppConfig.version}
+                </tspan>
+              )}
             </text>
           </svg>
         </NavLink>
       </div>
+
       <div className="flex grow justify-end px-2">
         <div className="flex items-stretch">
-          {/*
-          {visibleTopNavLinks.map(({ label, path }) => (
+          {!isDrawer &&
+            navBarLinks.map(({ label, path }) => (
+              <NavLink key={label} className="btn btn-ghost px-2" to={path}>
+                {label}
+              </NavLink>
+            ))}
+          {topBarLinks.map(({ label, path }) => (
             <NavLink key={label} className="btn btn-ghost px-2" to={path}>
               {label}
             </NavLink>
           ))}
-          */}
-          {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
+
+          { }
           {user ? (
             <div className="dropdown dropdown-end">
               <div tabIndex={0} role="button" className="btn btn-ghost p-0">
                 <FontAwesomeIcon icon={faUser} />
               </div>
-              <ul
+              <div
                 tabIndex={0}
-                className="menu dropdown-content bg-base-100 rounded-box z-1 w-35 p-2 shadow-sm"
+                className="dropdown-content w-48"
               >
-                {visibleDropdownLinks.map(({ label, path }) => (
-                  <li key={`vislink_${String(label)}`}>
-                    <NavLink
-                      onClick={() => void document.activeElement.blur()}
-                      to={path}
-                    >
-                      {label}
-                    </NavLink>
+                <div className="px-4 py-2">
+                  <p className="text-base-content font-semibold truncate">
+                    {user.full_name || user.username}
+                  </p>
+                  <p className="text-base-content/50 truncate text-xs">
+                    {user.email}
+                  </p>
+                </div>
+                <hr className="border-base-300" />
+                <ul className="menu w-full p-2">
+                  {dropdownLinks.map(({ label, path }) => (
+                    <li key={`vislink_${String(label)}`}>
+                      <NavLink
+                        onClick={() => { (document.activeElement as HTMLElement | null)?.blur(); }}
+                        to={path}
+                      >
+                        {label}
+                      </NavLink>
+                    </li>
+                  ))}
+                  {dropdownLinks.length > 0 && <li className="pointer-events-none"><hr className="border-base-300" /></li>}
+                  <li>
+                    <button className="text-error" onClick={handleLogout}>Logout</button>
                   </li>
-                ))}
-                <li key="logout">
-                  <button onClick={handleLogout}>Logout</button>
-                </li>
-              </ul>
+                </ul>
+              </div>
             </div>
           ) : (
             !hideNavPaths.includes(location.pathname) && (

@@ -1,12 +1,12 @@
 import type { JSX } from "react"
-import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { useNavigate, Link } from "react-router-dom"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { apiUrl } from "../utils/api"
+import { useToast } from "../hooks/useToast"
+import Toast from "../components/Toast"
 
-// form validation schema
 const forgotPasswordSchema = z.object({
   email: z.email("Invalid email address"),
 })
@@ -15,8 +15,8 @@ type ForgotFormValues = z.infer<typeof forgotPasswordSchema>
 
 export const ForgotPasswordForm = (): JSX.Element => {
   const navigate = useNavigate()
-  const [submitted, setSubmitted] = useState(false)
-  const [error, setError] = useState("")
+  const { toast, setToast } = useToast()
+
   const {
     register,
     handleSubmit,
@@ -27,7 +27,6 @@ export const ForgotPasswordForm = (): JSX.Element => {
   })
 
   const onSubmit = async (data: ForgotFormValues) => {
-    setError("")
     try {
       const res = await fetch(apiUrl("/auth/forgot-password"), {
         method: "POST",
@@ -40,55 +39,41 @@ export const ForgotPasswordForm = (): JSX.Element => {
         throw new Error(body?.detail ?? "Something went wrong")
       }
 
-      setSubmitted(true)
-      setTimeout(() => navigate("/login"), 2000)
+      setToast({ message: "If that email exists, a reset link has been sent.", type: "success" })
+      setTimeout(() => void navigate("/login"), 2000)
     } catch (err) {
-      setError((err as Error).message)
+      setToast({ message: (err as Error).message, type: "error" })
     }
   }
 
   return (
-    <div className="max-w-sm mx-auto p-4 border rounded shadow mt-20">
-      <h2 className="text-xl font-bold mb-4">Forgot Your Password?</h2>
-
-      {submitted ? (
-        <p className="text-success">
-          If that email exists in our system, a reset link has been sent.
-        </p>
-      ) : (
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <div className="mb-4">
-            <input
-              type="email"
-              placeholder="Email Address"
-              {...register("email")}
-              className={`w-full p-2 border rounded ${
-                errors.email ? "border-error" : ""
-              }`}
-              disabled={isSubmitting}
-            />
-            {errors.email && (
-              <p className="text-error text-sm mt-1">{errors.email.message}</p>
-            )}
-          </div>
-
-          {error && <p className="text-error text-sm mb-2">{error}</p>}
-
-          <button
-            type="submit"
-            className="btn btn-primary w-full"
-            disabled={isSubmitting || !isValid}
-          >
-            {isSubmitting ? "Sending..." : "Send Reset Link"}
-          </button>
-          <Link
-            to="/login"
-            className="block mt-4 text-center text-sm hover:text-primary"
-          >
-            Back to login
-          </Link>
-        </form>
-      )}
+    <>
+    <div className="max-w-sm mx-auto mt-10">
+      <div className="card bg-base-200 shadow-sm border border-base-300">
+      <div className="card-body py-4 px-5">
+      <h2 className="card-title text-base font-semibold mb-2">Forgot Your Password?</h2>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <fieldset className="fieldset">
+          <legend className="fieldset-legend">Email Address</legend>
+          <input
+            type="email"
+            {...register("email")}
+            className={`input w-full ${errors.email ? "input-error" : ""}`}
+            disabled={isSubmitting}
+          />
+          {errors.email && <p className="text-error text-sm mt-1">{errors.email.message}</p>}
+        </fieldset>
+        <button type="submit" className="btn btn-primary w-full mt-4" disabled={isSubmitting || !isValid}>
+          {isSubmitting ? "Sending..." : "Send Reset Link"}
+        </button>
+        <Link to="/login" className="block mt-4 text-center text-sm hover:text-primary">
+          Back to login
+        </Link>
+      </form>
+      </div>
+      </div>
     </div>
+    <Toast toast={toast} />
+    </>
   )
 }

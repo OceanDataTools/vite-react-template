@@ -1,8 +1,8 @@
 import { createAsyncThunk } from "@reduxjs/toolkit"
 import { apiUrl, fetchWithAuth } from "../../utils/api"
-import type { RootState, AppDispatch } from "../store"
+import type { RootState, AppDispatch } from "../../app/store"
 
-type User = {
+export type User = {
   id?: string
   username: string
   full_name: string
@@ -59,7 +59,7 @@ export const registerUserThunk = createAsyncThunk<
 export const loginThunk = createAsyncThunk<
   { token: string },
   { username: string; password: string },
-  { dispatch: AppDispatch }
+  { dispatch: AppDispatch; rejectValue: string }
 >(
   "auth/login",
   async ({ username, password }, { dispatch, rejectWithValue }) => {
@@ -85,19 +85,17 @@ export const loginThunk = createAsyncThunk<
 
       return { token: data.access_token }
     } catch (err) {
-      if (err instanceof Error) {
-        return rejectWithValue(err.message || "Login failed")
-      }
+      return rejectWithValue(err instanceof Error ? err.message : "Login failed")
     }
   },
 )
 
 // REFRESH TOKEN - no token passed in, relies on httpOnly cookie + fetchWithAuth pattern
-// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+ 
 export const refreshTokenThunk = createAsyncThunk<
   { token: string },
-  void,
-  { dispatch: AppDispatch; getState: () => RootState }
+  undefined,
+  { dispatch: AppDispatch; rejectValue: string }
 >("auth/refresh", async (_, thunkAPI) => {
   try {
     const res = await fetch(apiUrl("/auth/refresh"), {
@@ -112,18 +110,16 @@ export const refreshTokenThunk = createAsyncThunk<
 
     return { token: data.access_token }
   } catch (err) {
-    if (err instanceof Error) {
-      return thunkAPI.rejectWithValue(err.message || "Refresh failed")
-    }
+    return thunkAPI.rejectWithValue(err instanceof Error ? err.message : "Refresh failed")
   }
 })
 
 // LOGOUT - no token refresh needed, just call endpoint
-// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+ 
 export const logoutThunk = createAsyncThunk<
-  void,
-  object,
-  { getState: () => RootState }
+  undefined,
+  undefined,
+  { dispatch: AppDispatch; state: RootState; rejectValue: string }
 >("auth/logout", async (_, thunkAPI) => {
   try {
     await fetchWithAuth(
@@ -137,18 +133,16 @@ export const logoutThunk = createAsyncThunk<
 
     localStorage.removeItem("token")
   } catch (err) {
-    if (err instanceof Error) {
-      return thunkAPI.rejectWithValue(err.message || "Logout failed")
-    }
+    return thunkAPI.rejectWithValue(err instanceof Error ? err.message : "Logout failed")
   }
 })
 
 // FETCH USER PROFILE - uses fetchWithAuth so token refresh auto-handled
-// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+ 
 export const fetchUserProfileThunk = createAsyncThunk<
   User,
-  void,
-  { dispatch: AppDispatch; getState: () => RootState; rejectValue: string }
+  undefined,
+  { dispatch: AppDispatch; state: RootState; rejectValue: string }
 >("auth/fetchUserProfile", async (_, thunkAPI) => {
   try {
     const res = await fetchWithAuth("/profile", {}, thunkAPI)
@@ -159,9 +153,7 @@ export const fetchUserProfileThunk = createAsyncThunk<
 
     return data
   } catch (err) {
-    if (err instanceof Error) {
-      return thunkAPI.rejectWithValue(err.message || "Unable to fetch profile")
-    }
+    return thunkAPI.rejectWithValue(err instanceof Error ? err.message : "Unable to fetch profile")
   }
 })
 
@@ -169,7 +161,7 @@ export const fetchUserProfileThunk = createAsyncThunk<
 export const updateUserProfileThunk = createAsyncThunk<
   User,
   { email: string; full_name: string },
-  { dispatch: AppDispatch; getState: () => RootState; rejectValue: string }
+  { dispatch: AppDispatch; state: RootState; rejectValue: string }
 >("auth/updateUser", async (updates, thunkAPI) => {
   try {
     const res = await fetchWithAuth(
@@ -187,18 +179,16 @@ export const updateUserProfileThunk = createAsyncThunk<
 
     return data
   } catch (err) {
-    if (err instanceof Error) {
-      return thunkAPI.rejectWithValue(err.message || "Update failed")
-    }
+    return thunkAPI.rejectWithValue(err instanceof Error ? err.message : "Update failed")
   }
 })
 
 // UPDATE USER PROFILE PASSWORD - also uses fetchWithAuth for automatic token refresh
-// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+ 
 export const updateUserProfilePasswordThunk = createAsyncThunk<
-  void,
+  undefined,
   { current_password: string; new_password: string },
-  { dispatch: AppDispatch; getState: () => RootState; rejectValue: string }
+  { dispatch: AppDispatch; state: RootState; rejectValue: string }
 >(
   "auth/updateUserPassword",
   async ({ current_password, new_password }, thunkAPI) => {
@@ -221,11 +211,9 @@ export const updateUserProfilePasswordThunk = createAsyncThunk<
 
       return
     } catch (err) {
-      if (err instanceof Error) {
-        return thunkAPI.rejectWithValue(
-          err.message || "Network error while changing password",
-        )
-      }
+      return thunkAPI.rejectWithValue(
+        err instanceof Error ? err.message : "Network error while changing password",
+      )
     }
   },
 )

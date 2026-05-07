@@ -1,4 +1,4 @@
-import type { AppDispatch, RootState } from "../store"
+import type { AppDispatch, RootState } from "../app/store"
 import { refreshTokenThunk, logoutThunk } from "../features/auth/authThunks"
 import { AppConfig } from "../config"
 
@@ -20,7 +20,7 @@ export async function fetchWithAuth(
     ...(options.body ? { "Content-Type": "application/json" } : {}),
   })
 
-  const token = getState().auth?.token
+  const token = getState().auth.token
   if (!token) throw new Error("Missing access token")
 
   // First attempt with current access token
@@ -39,7 +39,7 @@ export async function fetchWithAuth(
   if (response.status !== 401) return response
 
   if (alreadyRefreshed) {
-    dispatch(logoutThunk())
+    void dispatch(logoutThunk())
     throw new Error("Token refresh failed after retry. Logged out.")
   }
 
@@ -49,14 +49,14 @@ export async function fetchWithAuth(
   const refreshResult = await dispatch(refreshTokenThunk())
 
   if (refreshResult.meta.requestStatus !== "fulfilled") {
-    dispatch(logoutThunk())
+    void dispatch(logoutThunk())
     throw new Error("Token refresh failed. Logged out.")
   }
 
   const newToken = getState().auth.token
 
   if (!newToken) {
-    dispatch(logoutThunk())
+    void dispatch(logoutThunk())
     throw new Error("New access token missing after refresh. Logged out.")
   }
 

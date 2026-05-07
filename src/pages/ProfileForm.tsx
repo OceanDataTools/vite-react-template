@@ -1,22 +1,31 @@
 // src/pages/ProfileForm.tsx
 import type { JSX } from "react"
-import { useEffect, useMemo, useState, useRef } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useAppSelector, useAppDispatch } from "../app/hooks"
 import type { RootState } from "../app/store"
 import { apiUrl } from "../utils/api"
+import { debounce } from "../utils/debounce"
 import {
   updateUserProfileThunk,
   updateUserProfilePasswordThunk,
 } from "../features/auth/authThunks"
+import { useToast } from "../hooks/useToast"
+import Toast from "../components/Toast"
+
+const checkEmailAvailability = debounce(async (email: string): Promise<{ available: boolean }> => {
+  const res = await fetch(apiUrl(`/users/available?email=${encodeURIComponent(email)}`))
+  if (!res.ok) throw new Error("SERVER_ERROR")
+  return res.json() as Promise<{ available: boolean }>
+}, 400)
 
 const ProfileForm = (): JSX.Element => {
   const dispatch = useAppDispatch()
   const user = useAppSelector((state: RootState) => state.auth.user)
   const loading = useAppSelector((state: RootState) => state.auth.loading)
-  const [status, setStatus] = useState("")
+  const { toast, setToast } = useToast()
 
   // Ref to store original email
   const originalEmail = useRef(user?.email ?? "")
@@ -41,35 +50,15 @@ const ProfileForm = (): JSX.Element => {
       email: z
         .email("Valid email address is required")
         .superRefine(async (val, ctx) => {
-          // Don't validate availability if email hasn't changed
-          if (val === originalEmail.current) {
-            return
-          }
+          if (val === originalEmail.current) return
 
           try {
-            const res = await fetch(
-              apiUrl(`/users/available?email=${encodeURIComponent(val)}`),
-            )
-            if (!res.ok) {
-              ctx.addIssue({
-                code: "custom",
-                message: "Server error validating email",
-              })
-              return
-            }
-
-            const data = await res.json()
-            if (!data.available) {
-              ctx.addIssue({
-                code: "custom",
-                message: "Email is already taken",
-              })
+            const json = await checkEmailAvailability(val)
+            if (!json.available) {
+              ctx.addIssue({ code: "custom", message: "Email is already taken" })
             }
           } catch {
-            ctx.addIssue({
-              code: "custom",
-              message: "Could not check email",
-            })
+            ctx.addIssue({ code: "custom", message: "Could not check email" })
           }
         }),
       full_name: z.string().optional(),
@@ -132,14 +121,14 @@ const ProfileForm = (): JSX.Element => {
 
   // Update form when user changes, and store new originalEmail
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+     
     if (user) {
-      originalEmail.current = user.email ?? "" // 🔄 update the ref
+      originalEmail.current = user.email
       reset(
         {
-          username: user.username ?? "",
-          full_name: user.full_name ?? "",
-          email: user.email ?? "",
+          username: user.username,
+          full_name: user.full_name,
+          email: user.email,
         },
         {
           keepErrors: true,
@@ -151,7 +140,7 @@ const ProfileForm = (): JSX.Element => {
   }, [user, reset])
 
   const onSubmit = async (data: ProfileFormValues) => {
-    setStatus("")
+    if (!user) return
 
     const trimmedUsername = data.username.trim()
     const trimmedEmail = data.email.trim()
@@ -172,7 +161,7 @@ const ProfileForm = (): JSX.Element => {
       if (updateUserProfileThunk.fulfilled.match(profileResult)) {
         profileUpdated = true
       } else {
-        setStatus("Profile update failed.")
+        setToast({ message: "Profile update failed.", type: "error" })
       }
     }
 
@@ -189,19 +178,19 @@ const ProfileForm = (): JSX.Element => {
       } else if (
         updateUserProfilePasswordThunk.rejected.match(passwordResult)
       ) {
-        setStatus(passwordResult.payload ?? "Password update failed.")
+        setToast({ message: passwordResult.payload ?? "Password update failed.", type: "error" })
       } else {
-        setStatus("Password update failed.")
+        setToast({ message: "Password update failed.", type: "error" })
       }
     }
 
-    // Consolidate status
+    // Consolidate success toast
     if (profileUpdated && passwordUpdated) {
-      setStatus("Profile and password updated!")
+      setToast({ message: "Profile and password updated!", type: "success" })
     } else if (profileUpdated) {
-      setStatus("Profile updated!")
+      setToast({ message: "Profile updated!", type: "success" })
     } else if (passwordUpdated) {
-      setStatus("Password updated!")
+      setToast({ message: "Password updated!", type: "success" })
     }
 
     // Optionally clear password fields
@@ -230,19 +219,15 @@ const ProfileForm = (): JSX.Element => {
       keepDirty: false,
       keepTouched: false,
     })
-    setStatus("")
+    setToast(null)
   }
 
   return (
-    <div className="max-w-xs mx-auto mt-10 p-4 border rounded shadow">
-      <h2 className="text-xl font-bold">Edit Profile</h2>
-      {status && (
-        <p
-          className={`text-sm mb-2 ${status.includes("updated") ? "text-success" : "text-error"}`}
-        >
-          {status}
-        </p>
-      )}
+    <>
+    <div className="max-w-sm mx-auto mt-10">
+      <div className="card bg-base-200 shadow-sm border border-base-300">
+      <div className="card-body py-4 px-5">
+      <h2 className="card-title text-base font-semibold">Edit Profile</h2>
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <fieldset className="fieldset">
           <legend className="fieldset-legend">Username</legend>
@@ -341,7 +326,11 @@ const ProfileForm = (): JSX.Element => {
           Reset
         </button>
       </form>
+      </div>
+      </div>
     </div>
+    <Toast toast={toast} />
+    </>
   )
 }
 

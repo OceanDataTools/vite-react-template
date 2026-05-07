@@ -7,8 +7,18 @@ import {
   updateUserProfileThunk,
   updateUserProfilePasswordThunk,
 } from "./authThunks"
+import type { User } from "./authThunks"
 
-const initialState = {
+type AuthState = {
+  token: string | null
+  user: User | null
+  loading: boolean
+  error: string | null
+}
+
+// Token is persisted in localStorage so sessions survive page refreshes. This trades
+// XSS exposure for UX convenience; acceptable given the app's deployment context.
+const initialState: AuthState = {
   token: localStorage.getItem("token") ?? null,
   user: null,
   loading: false,
@@ -40,7 +50,7 @@ export const authSlice = createSlice({
       })
       .addCase(loginThunk.rejected, (state, action) => {
         state.loading = false
-        state.error = action.payload
+        state.error = action.payload ?? null
       })
       .addCase(refreshTokenThunk.fulfilled, (state, action) => {
         state.token = action.payload.token
@@ -56,7 +66,7 @@ export const authSlice = createSlice({
       })
       .addCase(fetchUserProfileThunk.rejected, (state, action) => {
         state.user = null
-        state.error = action.payload
+        state.error = action.payload ?? null
       })
       .addCase(updateUserProfileThunk.fulfilled, (state, action) => {
         state.user = action.payload

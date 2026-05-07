@@ -1,4 +1,5 @@
 import type React from "react"
+import { useEffect, useRef } from "react"
 
 type DeleteConfirmModalProps = {
   isOpen: boolean
@@ -13,10 +14,16 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
   onConfirm,
   onCancel,
 }) => {
+  const dialogRef = useRef<HTMLDialogElement>(null)
+
+  useEffect(() => {
+    if (isOpen) dialogRef.current?.showModal()
+  }, [isOpen])
+
   if (!isOpen) return null
 
   return (
-    <dialog className="modal" open>
+    <dialog ref={dialogRef} className="modal" onClose={onCancel}>
       <div className="modal-box">
         <h3 className="font-bold text-lg">Confirm Delete</h3>
         <p className="py-4">
@@ -33,6 +40,7 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
           </button>
         </div>
       </div>
+      <form method="dialog" className="modal-backdrop"><button>close</button></form>
     </dialog>
   )
 }

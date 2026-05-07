@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faMagnifyingGlass, faCopy, faBan, faCircleCheck, faRotateRight, faTrash } from "@fortawesome/free-solid-svg-icons"
 import { useAppDispatch, useAppSelector } from "../app/hooks"
 import {
   fetchApiKeysThunk,
@@ -10,30 +12,42 @@ import {
   reissueApiKeyThunk,
 } from "../features/apikeys/apikeyThunks"
 import type { RootState } from "../app/store"
+import type { ApiKey, ApiRoute, Permission } from "../features/apikeys/apikeyThunks"
 import DeleteConfirmModal from "./DeleteConfirmModal"
+import InspectApiKeyModal from "./InspectApiKeyModal"
 import RevealApiKeyModal from "./RevealApiKeyModal"
 import ApiKeyModal from "./ApiKeyModal"
-
-type Permission = { route: string; method: string }
+import { useToast } from "../hooks/useToast"
+import Toast from "./Toast"
 
 type CreateKeyFormValues = {
   id?: string
   keyName: string
   permissions: Permission[]
-  expiresAt?: string | null
-  neverExpires?: boolean
+  expiresAt: string | null
+  neverExpires: boolean
 }
 
 const ApiKeys = () => {
   const dispatch = useAppDispatch()
   const { keys, routes: allRoutes } = useAppSelector((state: RootState) => state.apikeys)
 
-  const [formError, setFormError] = useState<string>()
+  const { toast, setToast } = useToast()
   const [keyToDelete, setKeyToDelete] = useState<string | null>(null)
   const [activeModal, setActiveModal] = useState<"create" | "reissue" | null>(null)
   const [selectedKey, setSelectedKey] = useState<CreateKeyFormValues | null>(null)
-  const [modalRoutes, setModalRoutes] = useState<any[]>([]) // routes shown in modal
+  const [modalRoutes, setModalRoutes] = useState<ApiRoute[]>([])
   const [revealedKey, setRevealedKey] = useState<string | null>(null)
+  const [inspectKey, setInspectKey] = useState<ApiKey | null>(null)
+
+  const handleInspect = async (key: ApiKey) => {
+    try {
+      const permissions = await dispatch(fetchApiKeyRoutesThunk(key.id)).unwrap()
+      setInspectKey({ ...key, permissions })
+    } catch {
+      setInspectKey({ ...key, permissions: [] })
+    }
+  }
 
   // -------------------------
   // Fetch initial data
@@ -47,10 +61,9 @@ const ApiKeys = () => {
   // Create Key
   // -------------------------
   const handleCreateKey = async (data: CreateKeyFormValues): Promise<boolean> => {
-    setFormError(undefined)
     const trimmedName = data.keyName.trim()
     if (keys.some(key => key.name === trimmedName)) {
-      setFormError("A key with that name already exists.")
+      setToast({ message: "A key with that name already exists.", type: "error" })
       return false
     }
 
@@ -63,11 +76,10 @@ const ApiKeys = () => {
         })
       ).unwrap()
 
-      setRevealedKey(newKey.unhashed_key)
-      setActiveModal("reveal")
+      setRevealedKey(newKey.unhashed_key ?? null)
       return true
     } catch {
-      setFormError("Failed to create API key")
+      setToast({ message: "Failed to create API key.", type: "error" })
       return false
     }
   }
@@ -76,22 +88,19 @@ const ApiKeys = () => {
   // Re-Issue Key
   // -------------------------
   const handleReissueKey = async (data: CreateKeyFormValues): Promise<boolean> => {
-    console.log(data);
-
     if (!data.id) return false
-    setFormError(undefined)
 
     try {
       const newKey = await dispatch(
         reissueApiKeyThunk({ id: data.id, expiresAt: data.expiresAt ?? null })
       ).unwrap()
 
-      setRevealedKey(newKey.unhashed_key)
+      setRevealedKey(newKey.unhashed_key ?? null)
       await dispatch(fetchApiKeysThunk())
       return true
     } catch (err) {
       console.error(err)
-      setFormError("Failed to reissue API key")
+      setToast({ message: "Failed to reissue API key.", type: "error" })
       return false
     }
   }
@@ -99,12 +108,10 @@ const ApiKeys = () => {
   // -------------------------
   // Open Re-Issue Modal
   // -------------------------
-  const reissueApiKey = async (key: any) => {
-    // Fetch routes specific to this key
+  const reissueApiKey = async (key: ApiKey) => {
     const keyPermissions = await dispatch(fetchApiKeyRoutesThunk(key.id)).unwrap()
 
-    // Transform routes for modal display
-    const formattedRoutes = keyPermissions.map((p: any) => ({
+    const formattedRoutes: ApiRoute[] = keyPermissions.map((p: Permission) => ({
       route: p.route,
       methods: [p.method],
       name: `${p.method} ${p.route}`,
@@ -120,7 +127,7 @@ const ApiKeys = () => {
     setSelectedKey({
       id: key.id,
       keyName: key.name,
-      permissions: keyPermissions.map((p: any) => ({ route: p.route, method: p.method })),
+      permissions: keyPermissions.map((p: Permission) => ({ route: p.route, method: p.method })),
       expiresAt,
       neverExpires: !expiresAt,
     })
@@ -130,27 +137,44 @@ const ApiKeys = () => {
   }
 
   // -------------------------
+  // Copy Key
+  // -------------------------
+  const handleCopyKey = async (key: ApiKey) => {
+    const keyPermissions = await dispatch(fetchApiKeyRoutesThunk(key.id)).unwrap()
+    setSelectedKey({
+      keyName: `${key.name} - copy`,
+      permissions: keyPermissions,
+      expiresAt: null,
+      neverExpires: false,
+    })
+    setActiveModal("create")
+  }
+
+  // -------------------------
   // Delete handlers
   // -------------------------
-  const handleDeleteClick = (id: string) => setKeyToDelete(id)
+  const handleDeleteClick = (id: string) => { setKeyToDelete(id); }
   const confirmDelete = async () => {
     if (!keyToDelete) return
     await dispatch(deleteApiKeyThunk(keyToDelete))
     setKeyToDelete(null)
   }
-  const cancelDelete = () => setKeyToDelete(null)
+  const cancelDelete = () => { setKeyToDelete(null); }
 
   // -------------------------
   // Render
   // -------------------------
   return (
-    <div className="mt-4">
-      {keys.length > 0 && (
-        <table className="table table-md table-zebra border border-base-content/8 w-full mb-2">
+    <div>
+      {keys.length === 0 ? (
+        <p className="text-sm text-base-content/50 my-3">No API keys yet.</p>
+      ) : (
+        <table className="table table-zebra w-full my-3">
           <thead>
             <tr>
               <th>Name</th>
               <th>Expires</th>
+              <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -158,33 +182,42 @@ const ApiKeys = () => {
             {keys.map(key => {
               const expiresAt = key.expires_at ? new Date(key.expires_at) : null
               const expired = expiresAt ? new Date() > expiresAt : false
+              const status = expired ? "expired" : key.revoked ? "revoked" : "active"
 
               return (
                 <tr key={key.id}>
-                  <td className={expired ? "text-error" : ""}>{key.name ?? "(No name)"}</td>
-                  <td className={expired ? "text-error" : ""}>
+                  <td>{key.name}</td>
+                  <td>
                     {expiresAt
                       ? expiresAt.toLocaleString(undefined, {
                           year: "numeric",
                           month: "2-digit",
-                          day: "2-digit"
+                          day: "2-digit",
                         })
                       : "never"}
                   </td>
-                  <td className="space-x-2">
-                    <button
-                      className="btn btn-xs btn-ghost"
-                      onClick={() =>
-                        expired ? void reissueApiKey(key) : void dispatch(revokeApiKeyThunk(key.id))
-                      }
-                    >
-                      {expired ? "Reissue" : key.revoked ? "Enable" : "Revoke"}
+                  <td>
+                    {status === "active"  && <span className="badge badge-success badge-sm">Active</span>}
+                    {status === "revoked" && <span className="badge badge-warning badge-sm">Revoked</span>}
+                    {status === "expired" && <span className="badge badge-error badge-sm">Expired</span>}
+                  </td>
+                  <td className="space-x-1">
+                    <button aria-label="Inspect" className="btn btn-xs btn-ghost tooltip" data-tip="Inspect" onClick={() => void handleInspect(key)}>
+                      <FontAwesomeIcon icon={faMagnifyingGlass} />
+                    </button>
+                    <button aria-label="Copy" className="btn btn-xs btn-ghost tooltip" data-tip="Copy" onClick={() => void handleCopyKey(key)}>
+                      <FontAwesomeIcon icon={faCopy} />
                     </button>
                     <button
-                      className="btn text-error btn-xs btn-ghost"
-                      onClick={() => handleDeleteClick(key.id)}
+                      aria-label={expired ? "Reissue" : key.revoked ? "Enable" : "Revoke"}
+                      className="btn btn-xs btn-ghost tooltip"
+                      data-tip={expired ? "Reissue" : key.revoked ? "Enable" : "Revoke"}
+                      onClick={() => expired ? void reissueApiKey(key) : void dispatch(revokeApiKeyThunk(key.id))}
                     >
-                      Delete
+                      <FontAwesomeIcon icon={expired ? faRotateRight : key.revoked ? faCircleCheck : faBan} />
+                    </button>
+                    <button aria-label="Delete" className="btn btn-xs btn-ghost text-error tooltip" data-tip="Delete" onClick={() => { handleDeleteClick(key.id); }}>
+                      <FontAwesomeIcon icon={faTrash} />
                     </button>
                   </td>
                 </tr>
@@ -194,7 +227,7 @@ const ApiKeys = () => {
         </table>
       )}
 
-      <button className="btn btn-primary btn-sm mt-2" onClick={() => setActiveModal("create")}>
+      <button className="btn btn-primary btn-sm" onClick={() => { setActiveModal("create"); }}>
         Create API Key
       </button>
 
@@ -205,9 +238,9 @@ const ApiKeys = () => {
           isOpen
           mode="create"
           routes={allRoutes}
+          initialValues={selectedKey ?? undefined}
           onSubmitForm={handleCreateKey}
-          formError={formError}
-          onClose={() => setActiveModal(null)}
+          onClose={() => { setSelectedKey(null); setActiveModal(null) }}
         />
       )}
 
@@ -217,10 +250,9 @@ const ApiKeys = () => {
         <ApiKeyModal
           isOpen
           mode="reissue"
-          routes={modalRoutes} // only key's routes
+          routes={modalRoutes}
           initialValues={selectedKey}
           onSubmitForm={handleReissueKey}
-          formError={formError}
           onClose={() => {
             setSelectedKey(null)
             setActiveModal(null)
@@ -230,11 +262,19 @@ const ApiKeys = () => {
       )}
 
       {/* ------------------------- */}
+      {/* Inspect Modal */}
+      <InspectApiKeyModal
+        isOpen={!!inspectKey}
+        apiKey={inspectKey}
+        onClose={() => { setInspectKey(null); }}
+      />
+
+      {/* ------------------------- */}
       {/* Reveal Modal */}
       <RevealApiKeyModal
         isOpen={!!revealedKey}
-        keyValue={revealedKey}
-        onClose={() => setRevealedKey(null)}
+        keyValue={revealedKey ?? ""}
+        onClose={() => { setRevealedKey(null); }}
       />
 
       {/* ------------------------- */}
@@ -245,6 +285,8 @@ const ApiKeys = () => {
         onConfirm={confirmDelete}
         onCancel={cancelDelete}
       />
+
+      <Toast toast={toast} />
     </div>
   )
 }

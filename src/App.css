@@ -1,4 +1,42 @@
 @import "tailwindcss";
+
+:root {
+  --topnav-height: 3rem;
+  --sidebar-width: 15rem;
+}
+
+html {
+  font-size: 18px;
+}
+
+[data-theme=dark] {
+  --color-base-content: oklch(82% .02 257);
+}
+
+[data-theme=dark] .card {
+  border-color: oklch(36% .018 252);
+}
+
+/* Constrain drawer overlay to the area below the topnav */
+.drawer-below-topnav .drawer-side {
+  top: var(--topnav-height);
+}
+
+.dropdown-content {
+  @apply bg-base-100 rounded-box z-50 shadow-lg border border-base-300;
+}
+
+.table :where(th, td) {
+  padding-block: 0.4rem;
+}
+
+.card .table-zebra tbody tr:nth-child(2n) {
+  background-color: var(--color-base-300);
+}
+
+[data-theme=dark] .card .table-zebra tbody tr:nth-child(2n) {
+  background-color: oklch(27% .016 252);
+}
 @plugin "daisyui" {
   themes: dark;
   exclude: rootscrollgutter;
@@ -32,7 +70,7 @@
   --color-error-content: oklch(12.402% 0.041 28.717);
   --radius-selector: 0.5rem;
   --radius-field: 0.25rem;
-  --radius-box: 0.5rem;
+  --radius-box: 0;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
   --border: 1px;
