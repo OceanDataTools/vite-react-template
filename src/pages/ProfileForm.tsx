@@ -234,7 +234,7 @@ const ProfileForm = (): JSX.Element => {
           <input
             type="text"
             {...register("username")}
-            className={"w-full border p-2 rounded"}
+            className="input w-full"
             disabled
           />
         </fieldset>
@@ -243,9 +243,7 @@ const ProfileForm = (): JSX.Element => {
           <input
             type="text"
             {...register("full_name")}
-            className={`w-full border p-2 rounded ${
-              errors.full_name ? "border-error" : ""
-            }`}
+            className={`input w-full ${errors.full_name ? "input-error" : ""}`}
             disabled={loading || isSubmitting}
           />
           {errors.full_name && (
@@ -259,9 +257,7 @@ const ProfileForm = (): JSX.Element => {
           <input
             type="text"
             {...register("email")}
-            className={`w-full border p-2 rounded ${
-              errors.email ? "border-error" : ""
-            }`}
+            className={`input w-full ${errors.email ? "input-error" : ""}`}
             disabled={loading || isSubmitting}
           />
           {errors.email && (
@@ -273,7 +269,7 @@ const ProfileForm = (): JSX.Element => {
           <input
             type="password"
             {...register("current_password")}
-            className={`w-full border p-2 rounded ${errors.current_password ? "border-error" : ""}`}
+            className={`input w-full ${errors.current_password ? "input-error" : ""}`}
             disabled={loading || isSubmitting}
           />
           {errors.current_password && (
@@ -287,7 +283,7 @@ const ProfileForm = (): JSX.Element => {
           <input
             type="password"
             {...register("new_password")}
-            className={`w-full border p-2 rounded ${errors.new_password ? "border-error" : ""}`}
+            className={`input w-full ${errors.new_password ? "input-error" : ""}`}
             disabled={loading || isSubmitting}
           />
           {errors.new_password && (
@@ -301,7 +297,7 @@ const ProfileForm = (): JSX.Element => {
           <input
             type="password"
             {...register("confirm_password")}
-            className={`w-full border p-2 rounded ${errors.confirm_password ? "border-error" : ""}`}
+            className={`input w-full ${errors.confirm_password ? "input-error" : ""}`}
             disabled={loading || isSubmitting}
           />
           {errors.confirm_password && (
