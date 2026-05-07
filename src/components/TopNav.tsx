@@ -7,11 +7,20 @@ import { faUser } from "@fortawesome/free-solid-svg-icons"
 import type { RootState } from "../app/store"
 import { AppConfig } from "../config"
 import { getNavRoutes } from "../routes"
+import { useLoggerStateWS, type WSStatus } from "../hooks/useLoggerStateWS"
+
+const WS_STATUS_STYLE: Record<WSStatus, { dot: string; label: string }> = {
+  connected:    { dot: "bg-success", label: "connected" },
+  degraded:     { dot: "bg-warning", label: "data server unreachable" },
+  connecting:   { dot: "bg-warning", label: "connecting" },
+  disconnected: { dot: "bg-error",   label: "disconnected" },
+}
 
 export const TopNav = (): JSX.Element => {
   const location = useLocation()
   const dispatch = useAppDispatch()
   const { user } = useAppSelector((state: RootState) => state.auth)
+  const wsStatus = useLoggerStateWS()
   const hideNavPaths = ["/login"]
 
   const handleLogout = () => void dispatch(logoutThunk())
@@ -62,6 +71,12 @@ export const TopNav = (): JSX.Element => {
       </div>
 
       <div className="flex grow justify-end px-2">
+        <div className="flex items-center gap-2 mr-4 text-sm opacity-70">
+          <span
+            className={`inline-block w-3 h-3 rounded-full shrink-0 ${WS_STATUS_STYLE[wsStatus].dot} ${wsStatus === "connected" ? "" : "animate-pulse"}`}
+          />
+          {WS_STATUS_STYLE[wsStatus].label}
+        </div>
         <div className="flex items-stretch">
           {!isDrawer &&
             navBarLinks.map(({ label, path }) => (
