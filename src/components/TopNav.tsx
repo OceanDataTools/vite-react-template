@@ -1,13 +1,18 @@
 import type { JSX } from "react"
-import { NavLink, useLocation } from "react-router-dom"
+import { NavLink, useLocation, useNavigate } from "react-router-dom"
 import { useAppDispatch, useAppSelector } from "../app/hooks"
 import { logoutThunk } from "../features/auth/authThunks"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faUser } from "@fortawesome/free-solid-svg-icons"
+import { faUser, faChevronDown } from "@fortawesome/free-solid-svg-icons"
 import type { RootState } from "../app/store"
 import { AppConfig } from "../config"
 import { getNavRoutes } from "../routes"
 import { useLoggerStateWS, type WSStatus } from "../hooks/useLoggerStateWS"
+
+const ADVANCED_ITEMS = [
+  { label: "Test Connection",     path: "/advanced/test-connection" },
+  { label: "Verify Parser Format", path: "/advanced/verify-parser" },
+]
 
 const WS_STATUS_STYLE: Record<WSStatus, { dot: string; label: string }> = {
   connected:    { dot: "bg-success", label: "connected" },
@@ -23,6 +28,7 @@ export const TopNav = (): JSX.Element => {
   const wsStatus = useLoggerStateWS()
   const hideNavPaths = ["/login"]
 
+  const navigate = useNavigate()
   const handleLogout = () => void dispatch(logoutThunk())
 
   const isDrawer = AppConfig.layout === "drawer"
@@ -90,6 +96,31 @@ export const TopNav = (): JSX.Element => {
             </NavLink>
           ))}
 
+          {user && (
+            <div className="dropdown dropdown-end">
+              <div tabIndex={0} role="button" className="btn btn-ghost px-2 gap-1">
+                Advanced
+                <FontAwesomeIcon icon={faChevronDown} size="xs" />
+              </div>
+              <ul
+                tabIndex={0}
+                className="dropdown-content menu bg-base-200 rounded-box shadow-md w-52 p-2 z-50"
+              >
+                {ADVANCED_ITEMS.map(({ label, path }) => (
+                  <li key={path}>
+                    <button
+                      onClick={() => {
+                        (document.activeElement as HTMLElement | null)?.blur()
+                        navigate(path)
+                      }}
+                    >
+                      {label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           { }
           {user ? (
             <div className="dropdown dropdown-end">

@@ -20,6 +20,8 @@ import { LoggerStatusPage } from "./pages/LoggerStatusPage"
 import { LogsPage } from "./pages/LogsPage"
 import { RegisterForm } from "./pages/RegisterForm"
 import { ResetPasswordForm } from "./pages/ResetPasswordForm"
+import { TestConnectionPage } from "./pages/TestConnectionPage"
+import { VerifyParserPage } from "./pages/VerifyParserPage"
 import { navRoutes } from "./routes"
 
 export const RequireAuth = () => {
@@ -99,6 +101,11 @@ export const App = () => {
                   />
                 ) : null
               )}
+          </Route>
+
+          <Route element={<RequireAuth />}>
+            <Route path="/advanced/test-connection" element={<TestConnectionPage />} />
+            <Route path="/advanced/verify-parser" element={<VerifyParserPage />} />
           </Route>
 
           <Route path="/" element={<Home />} />
