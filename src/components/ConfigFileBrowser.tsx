@@ -50,7 +50,7 @@ export function ConfigFileBrowser({ token, selected, onSelect }: Props) {
         </button>
         {segments.map((seg, i) => (
           <span key={i} className="flex items-center gap-1">
-            <span>/</span>
+            {i > 0 && <span>/</span>}
             <button
               className="hover:opacity-100 hover:underline"
               onClick={() => { setPath(segments.slice(0, i + 1).join("/")); }}
