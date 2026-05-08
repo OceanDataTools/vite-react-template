@@ -4,7 +4,7 @@ import packageJson from "../package.json" with { type: "json" }
 const BREAKPOINT_PX = { sm: 640, md: 768, lg: 1024, xl: 1280, "2xl": 1536 } as const
 
 const EnvSchema = z.object({
-  VITE_SERVER_API_BASE_URL: z.url().default("http://localhost:8000"),
+  VITE_SERVER_API_BASE_URL: z.string().default("http://localhost:8000"),
   VITE_DEFAULT_THEME: z.enum(["light", "dark"]).default("light"),
   VITE_ALLOW_SELF_REGISTER: z.enum(["true", "false"]).default("true"),
   VITE_PROJECT: z.string().default("OpenRVDAS"),
