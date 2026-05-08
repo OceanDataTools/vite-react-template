@@ -63,6 +63,29 @@ export const fetchLoggersThunk = createAsyncThunk<Logger[]>(
   },
 )
 
+export type ConfigPreview = {
+  config: Record<string, unknown>
+  errors: string[]
+  warnings: string[]
+}
+
+export const previewConfigurationThunk = createAsyncThunk<
+  ConfigPreview,
+  string,
+  { dispatch: AppDispatch; state: RootState }
+>("openrvdas/previewConfiguration", async (filepath, thunkAPI) => {
+  const res = await fetchWithAuth(
+    `/configuration/preview?config_filepath=${encodeURIComponent(filepath)}`,
+    { method: "POST" },
+    thunkAPI,
+  )
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({})) as { detail?: string }
+    throw new Error(data.detail ?? "Failed to preview configuration")
+  }
+  return res.json() as Promise<ConfigPreview>
+})
+
 export const loadConfigurationThunk = createAsyncThunk<
   undefined,
   string,
