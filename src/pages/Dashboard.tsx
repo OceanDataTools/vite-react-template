@@ -78,6 +78,11 @@ export const Dashboard = (): JSX.Element => {
   const [viewConfigJson, setViewConfigJson] = useState<string | null>(null)
   const [viewConfigLoading, setViewConfigLoading] = useState(false)
 
+  const cruiseConfigViewRef = useRef<HTMLDialogElement>(null)
+  const [cruiseConfigPreview, setCruiseConfigPreview] = useState<ConfigPreview | null>(null)
+  const [cruiseConfigLoading, setCruiseConfigLoading] = useState(false)
+  const [cruiseConfigError, setCruiseConfigError] = useState<string | null>(null)
+
   const openConfigView = (configId: string) => {
     setViewConfigId(configId)
     setViewConfigJson(null)
@@ -94,6 +99,21 @@ export const Dashboard = (): JSX.Element => {
       })
       .catch(() => { setViewConfigJson("Failed to load config."); })
       .finally(() => { setViewConfigLoading(false); })
+  }
+
+  const openCruiseConfigView = async () => {
+    if (!cruise?.config_filename) return
+    setCruiseConfigPreview(null)
+    setCruiseConfigError(null)
+    setCruiseConfigLoading(true)
+    cruiseConfigViewRef.current?.showModal()
+    const result = await dispatch(previewConfigurationThunk(cruise.config_filename))
+    setCruiseConfigLoading(false)
+    if (previewConfigurationThunk.fulfilled.match(result)) {
+      setCruiseConfigPreview(result.payload)
+    } else {
+      setCruiseConfigError((result.payload as string | undefined) ?? result.error?.message ?? "Failed to load config")
+    }
   }
 
   const [loggerFilter, setLoggerFilter] = useState("")
@@ -237,6 +257,15 @@ export const Dashboard = (): JSX.Element => {
                       return idx >= 0 ? parts.slice(idx).join("/") : cruise.config_filename
                     })()
                   : "—"}</span>
+                {cruise.config_filename && isAuthenticated && (
+                  <button
+                    className="btn btn-ghost btn-xs opacity-40 hover:opacity-100 p-0 min-h-0 h-auto"
+                    onClick={() => void openCruiseConfigView()}
+                    title="View processed config"
+                  >
+                    <FontAwesomeIcon icon={faCircleInfo} size="lg" />
+                  </button>
+                )}
                 {configFileChanged && (
                   <button
                     className="badge badge-warning badge-sm gap-1 cursor-pointer hover:badge-success disabled:opacity-50 disabled:cursor-not-allowed"
@@ -572,6 +601,59 @@ export const Dashboard = (): JSX.Element => {
             </pre>
           )}
           <div className="modal-action mt-3">
+            <form method="dialog">
+              <button className="btn btn-sm">Close</button>
+            </form>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop">
+          <button>close</button>
+        </form>
+      </dialog>
+
+      {/* Cruise Processed Config Modal */}
+      <dialog ref={cruiseConfigViewRef} className="modal">
+        <div className="modal-box max-w-3xl max-h-[85vh] flex flex-col">
+          <h3 className="font-bold text-lg mb-1 shrink-0">Processed Configuration</h3>
+          <p className="text-sm opacity-60 font-mono mb-3 shrink-0">{cruise?.config_filename}</p>
+          {cruiseConfigLoading ? (
+            <div className="flex justify-center py-8">
+              <span className="loading loading-spinner loading-md" />
+            </div>
+          ) : cruiseConfigError ? (
+            <div role="alert" className="alert alert-error text-sm py-2">
+              <span>{cruiseConfigError}</span>
+            </div>
+          ) : cruiseConfigPreview && (
+            <>
+              {cruiseConfigPreview.errors.length > 0 && (
+                <div className="mb-3 shrink-0">
+                  <p className="text-sm font-semibold text-error mb-1">Errors ({cruiseConfigPreview.errors.length})</p>
+                  <ul className="bg-error/10 border border-error/30 rounded p-2 space-y-1">
+                    {cruiseConfigPreview.errors.map((e, i) => (
+                      <li key={i} className="text-xs font-mono text-error">{e}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {cruiseConfigPreview.warnings.length > 0 && (
+                <div className="mb-3 shrink-0">
+                  <p className="text-sm font-semibold text-warning mb-1">Warnings ({cruiseConfigPreview.warnings.length})</p>
+                  <ul className="bg-warning/10 border border-warning/30 rounded p-2 space-y-1">
+                    {cruiseConfigPreview.warnings.map((w, i) => (
+                      <li key={i} className="text-xs font-mono text-warning">{w}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <div className="flex-1 overflow-y-auto min-h-0">
+                <pre className="bg-base-300 rounded p-3 text-xs font-mono whitespace-pre-wrap break-words">
+                  {JSON.stringify(cruiseConfigPreview.config, null, 2)}
+                </pre>
+              </div>
+            </>
+          )}
+          <div className="modal-action mt-3 shrink-0">
             <form method="dialog">
               <button className="btn btn-sm">Close</button>
             </form>
