@@ -1,13 +1,18 @@
 import type { JSX } from "react"
-import { NavLink, useLocation } from "react-router-dom"
+import { NavLink, useLocation, useNavigate } from "react-router-dom"
 import { useAppDispatch, useAppSelector } from "../app/hooks"
 import { logoutThunk } from "../features/auth/authThunks"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faUser } from "@fortawesome/free-solid-svg-icons"
+import { faUser, faChevronDown } from "@fortawesome/free-solid-svg-icons"
 import type { RootState } from "../app/store"
 import { AppConfig } from "../config"
 import { getNavRoutes } from "../routes"
 import { useLoggerStateWS, type WSStatus } from "../hooks/useLoggerStateWS"
+
+const ADVANCED_ITEMS = [
+  { label: "Test Connection",     path: "/advanced/test-connection" },
+  { label: "Verify Parser Format", path: "/advanced/verify-parser" },
+]
 
 const WS_STATUS_STYLE: Record<WSStatus, { dot: string; label: string }> = {
   connected:    { dot: "bg-success", label: "connected" },
@@ -23,23 +28,21 @@ export const TopNav = (): JSX.Element => {
   const wsStatus = useLoggerStateWS()
   const hideNavPaths = ["/login"]
 
+  const navigate = useNavigate()
   const handleLogout = () => void dispatch(logoutThunk())
 
   const isDrawer = AppConfig.layout === "drawer"
 
   const dropdownLinks = getNavRoutes("top", user).filter(
-    ({ isPublic = false }) =>
-      !(isPublic && hideNavPaths.includes(location.pathname)),
+    ({ isPublic = false }) => !(isPublic && hideNavPaths.includes(location.pathname))
   )
 
   const navBarLinks = getNavRoutes("side", user).filter(
-    ({ isPublic = false }) =>
-      !(isPublic && hideNavPaths.includes(location.pathname)),
+    ({ isPublic = false }) => !(isPublic && hideNavPaths.includes(location.pathname))
   )
 
   const topBarLinks = getNavRoutes("topbar", user).filter(
-    ({ isPublic = false }) =>
-      !(isPublic && hideNavPaths.includes(location.pathname)),
+    ({ isPublic = false }) => !(isPublic && hideNavPaths.includes(location.pathname))
   )
 
   return (
@@ -93,13 +96,41 @@ export const TopNav = (): JSX.Element => {
             </NavLink>
           ))}
 
-          {}
+          {user && (
+            <div className="dropdown dropdown-end">
+              <div tabIndex={0} role="button" className="btn btn-ghost px-2 gap-1">
+                Advanced
+                <FontAwesomeIcon icon={faChevronDown} size="xs" />
+              </div>
+              <ul
+                tabIndex={0}
+                className="dropdown-content menu bg-base-200 rounded-box shadow-md w-52 p-2 z-50"
+              >
+                {ADVANCED_ITEMS.map(({ label, path }) => (
+                  <li key={path}>
+                    <button
+                      onClick={() => {
+                        (document.activeElement as HTMLElement | null)?.blur()
+                        navigate(path)
+                      }}
+                    >
+                      {label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          { }
           {user ? (
             <div className="dropdown dropdown-end">
               <div tabIndex={0} role="button" className="btn btn-ghost p-0">
                 <FontAwesomeIcon icon={faUser} />
               </div>
-              <div tabIndex={0} className="dropdown-content w-48">
+              <div
+                tabIndex={0}
+                className="dropdown-content w-48"
+              >
                 <div className="px-4 py-2">
                   <p className="text-base-content font-semibold truncate">
                     {user.full_name || user.username}
@@ -113,26 +144,16 @@ export const TopNav = (): JSX.Element => {
                   {dropdownLinks.map(({ label, path }) => (
                     <li key={`vislink_${label}`}>
                       <NavLink
-                        onClick={() => {
-                          ;(
-                            document.activeElement as HTMLElement | null
-                          )?.blur()
-                        }}
+                        onClick={() => { (document.activeElement as HTMLElement | null)?.blur(); }}
                         to={path}
                       >
                         {label}
                       </NavLink>
                     </li>
                   ))}
-                  {dropdownLinks.length > 0 && (
-                    <li className="pointer-events-none">
-                      <hr className="border-base-300" />
-                    </li>
-                  )}
+                  {dropdownLinks.length > 0 && <li className="pointer-events-none"><hr className="border-base-300" /></li>}
                   <li>
-                    <button className="text-error" onClick={handleLogout}>
-                      Logout
-                    </button>
+                    <button className="text-error" onClick={handleLogout}>Logout</button>
                   </li>
                 </ul>
               </div>
