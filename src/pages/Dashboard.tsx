@@ -15,7 +15,9 @@ import {
   activateModeThunk,
   activateConfigThunk,
   loadConfigurationThunk,
+  previewConfigurationThunk,
 } from "../features/openrvdas/openrvdasThunks"
+import type { ConfigPreview } from "../features/openrvdas/openrvdasThunks"
 import { useLoggerStateWS } from "../hooks/useLoggerStateWS"
 import { ConfigFileBrowser } from "../components/ConfigFileBrowser"
 import { LogPanel, EntryRow } from "../components/LogPanel"
@@ -96,14 +98,36 @@ export const Dashboard = (): JSX.Element => {
 
   const [loggerFilter, setLoggerFilter] = useState("")
 
+  const [previewStep, setPreviewStep] = useState<"select" | "preview">("select")
+  const [previewing, setPreviewing] = useState(false)
+  const [preview, setPreview] = useState<ConfigPreview | null>(null)
+  const [previewError, setPreviewError] = useState<string | null>(null)
+
   const openLoadModal = () => {
     setSelectedFile(null)
+    setPreviewStep("select")
+    setPreview(null)
+    setPreviewError(null)
     void dispatch(clearLoadConfigError())
     dialogRef.current?.showModal()
   }
 
   const closeLoadModal = () => {
     dialogRef.current?.close()
+  }
+
+  const handlePreview = async () => {
+    if (!selectedFile || previewing) return
+    setPreviewing(true)
+    setPreviewError(null)
+    const result = await dispatch(previewConfigurationThunk(selectedFile))
+    setPreviewing(false)
+    if (previewConfigurationThunk.fulfilled.match(result)) {
+      setPreview(result.payload)
+      setPreviewStep("preview")
+    } else {
+      setPreviewError((result.payload as string | undefined) ?? "Preview failed")
+    }
   }
 
   const handleLoadSubmit = (e: React.FormEvent) => {
@@ -381,42 +405,115 @@ export const Dashboard = (): JSX.Element => {
 
       {/* Load Config Modal */}
       <dialog ref={dialogRef} className="modal">
-        <div className="modal-box">
-          <h3 className="font-bold text-lg mb-4">Load Configuration</h3>
-          <form onSubmit={handleLoadSubmit} className="space-y-4">
-            {token && (
-              <ConfigFileBrowser
-                token={token}
-                selected={selectedFile}
-                onSelect={setSelectedFile}
-              />
-            )}
-            {loadConfigError && (
-              <div role="alert" className="alert alert-error text-sm py-2">
-                <span>{loadConfigError}</span>
-              </div>
-            )}
-            <div className="modal-action mt-2">
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm"
-                onClick={closeLoadModal}
-                disabled={loadingConfig}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn btn-primary btn-sm"
-                disabled={!selectedFile || loadingConfig}
-              >
-                {loadingConfig && (
-                  <span className="loading loading-spinner loading-xs" />
+        <div className={`modal-box flex flex-col ${previewStep === "preview" ? "max-w-3xl max-h-[85vh]" : ""}`}>
+
+          {/* Step 1: file selection */}
+          {previewStep === "select" && (
+            <>
+              <h3 className="font-bold text-lg mb-4">Load Configuration</h3>
+              <div className="space-y-4">
+                {token && (
+                  <ConfigFileBrowser
+                    token={token}
+                    selected={selectedFile}
+                    onSelect={setSelectedFile}
+                  />
                 )}
-                Load
-              </button>
-            </div>
-          </form>
+                {previewError && (
+                  <div role="alert" className="alert alert-error text-sm py-2">
+                    <span>{previewError}</span>
+                  </div>
+                )}
+                <div className="modal-action mt-2">
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={closeLoadModal}>
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    disabled={!selectedFile || previewing}
+                    onClick={() => void handlePreview()}
+                  >
+                    {previewing && <span className="loading loading-spinner loading-xs" />}
+                    Preview
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Step 2: preview result */}
+          {previewStep === "preview" && preview && (
+            <>
+              <h3 className="font-bold text-lg mb-1 shrink-0">Configuration Preview</h3>
+              <p className="text-sm opacity-60 font-mono mb-3 shrink-0">{selectedFile}</p>
+
+              {preview.errors.length > 0 && (
+                <div className="mb-3 shrink-0">
+                  <p className="text-sm font-semibold text-error mb-1">Errors ({preview.errors.length})</p>
+                  <ul className="bg-error/10 border border-error/30 rounded p-2 space-y-1">
+                    {preview.errors.map((e, i) => (
+                      <li key={i} className="text-xs font-mono text-error">{e}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {preview.warnings.length > 0 && (
+                <div className="mb-3 shrink-0">
+                  <p className="text-sm font-semibold text-warning mb-1">Warnings ({preview.warnings.length})</p>
+                  <ul className="bg-warning/10 border border-warning/30 rounded p-2 space-y-1">
+                    {preview.warnings.map((w, i) => (
+                      <li key={i} className="text-xs font-mono text-warning">{w}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <p className="text-sm font-semibold mb-1 shrink-0">Processed Configuration</p>
+              <div className="flex-1 overflow-y-auto min-h-0">
+                <pre className="bg-base-300 rounded p-3 text-xs font-mono whitespace-pre-wrap break-words">
+                  {JSON.stringify(preview.config, null, 2)}
+                </pre>
+              </div>
+
+              {loadConfigError && (
+                <div role="alert" className="alert alert-error text-sm py-2 mt-3 shrink-0">
+                  <span>{loadConfigError}</span>
+                </div>
+              )}
+
+              <div className="modal-action mt-3 shrink-0">
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => { setPreviewStep("select"); setPreview(null); }}
+                  disabled={loadingConfig}
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={closeLoadModal}
+                  disabled={loadingConfig}
+                >
+                  Cancel
+                </button>
+                <form onSubmit={handleLoadSubmit}>
+                  <button
+                    type="submit"
+                    className="btn btn-primary btn-sm"
+                    disabled={preview.errors.length > 0 || loadingConfig}
+                    title={preview.errors.length > 0 ? "Fix errors before applying" : undefined}
+                  >
+                    {loadingConfig && <span className="loading loading-spinner loading-xs" />}
+                    Apply Configuration
+                  </button>
+                </form>
+              </div>
+            </>
+          )}
         </div>
         <form method="dialog" className="modal-backdrop">
           <button>close</button>
