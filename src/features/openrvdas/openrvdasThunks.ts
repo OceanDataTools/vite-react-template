@@ -72,7 +72,7 @@ export type ConfigPreview = {
 export const previewConfigurationThunk = createAsyncThunk<
   ConfigPreview,
   string,
-  { dispatch: AppDispatch; state: RootState }
+  { dispatch: AppDispatch; state: RootState; rejectValue: string }
 >("openrvdas/previewConfiguration", async (filepath, thunkAPI) => {
   const res = await fetchWithAuth(
     `/configuration/preview?config_filepath=${encodeURIComponent(filepath)}`,
@@ -81,7 +81,7 @@ export const previewConfigurationThunk = createAsyncThunk<
   )
   if (!res.ok) {
     const data = await res.json().catch(() => ({})) as { detail?: string }
-    throw new Error(data.detail ?? "Failed to preview configuration")
+    return thunkAPI.rejectWithValue(data.detail ?? "Failed to preview configuration")
   }
   return res.json() as Promise<ConfigPreview>
 })

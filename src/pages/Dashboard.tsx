@@ -102,12 +102,15 @@ export const Dashboard = (): JSX.Element => {
   const [previewing, setPreviewing] = useState(false)
   const [preview, setPreview] = useState<ConfigPreview | null>(null)
   const [previewError, setPreviewError] = useState<string | null>(null)
+  const [previewCanGoBack, setPreviewCanGoBack] = useState(true)
+  const [fileChangedChecking, setFileChangedChecking] = useState(false)
 
   const openLoadModal = () => {
     setSelectedFile(null)
     setPreviewStep("select")
     setPreview(null)
     setPreviewError(null)
+    setPreviewCanGoBack(true)
     void dispatch(clearLoadConfigError())
     dialogRef.current?.showModal()
   }
@@ -126,7 +129,34 @@ export const Dashboard = (): JSX.Element => {
       setPreview(result.payload)
       setPreviewStep("preview")
     } else {
-      setPreviewError((result.payload as string | undefined) ?? "Preview failed")
+      setPreviewError((result.payload as string | undefined) ?? result.error?.message ?? "Preview failed")
+    }
+  }
+
+  const handleFileChangedReload = async () => {
+    if (!cruise?.config_filename || fileChangedChecking) return
+    setFileChangedChecking(true)
+    const result = await dispatch(previewConfigurationThunk(cruise.config_filename))
+    setFileChangedChecking(false)
+    if (previewConfigurationThunk.fulfilled.match(result)) {
+      const p = result.payload
+      if (p.errors.length === 0) {
+        void dispatch(loadConfigurationThunk(cruise.config_filename))
+      } else {
+        setSelectedFile(cruise.config_filename)
+        setPreview(p)
+        setPreviewStep("preview")
+        setPreviewCanGoBack(false)
+        setPreviewError(null)
+        void dispatch(clearLoadConfigError())
+        dialogRef.current?.showModal()
+      }
+    } else {
+      setSelectedFile(cruise.config_filename)
+      setPreviewError((result.payload as string | undefined) ?? result.error?.message ?? "Preview failed")
+      setPreviewStep("select")
+      void dispatch(clearLoadConfigError())
+      dialogRef.current?.showModal()
     }
   }
 
@@ -204,15 +234,14 @@ export const Dashboard = (): JSX.Element => {
                 {configFileChanged && (
                   <button
                     className="badge badge-warning badge-sm gap-1 cursor-pointer hover:badge-success disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Config file has changed on disk since it was loaded"
-                    disabled={!isAuthenticated || !backendConnected || loadingConfig}
-                    onClick={() => {
-                      if (cruise.config_filename) {
-                        void dispatch(loadConfigurationThunk(cruise.config_filename))
-                      }
-                    }}
+                    title="Config file has changed on disk — click to validate and apply"
+                    disabled={!isAuthenticated || !backendConnected || loadingConfig || fileChangedChecking}
+                    onClick={() => void handleFileChangedReload()}
                   >
-                    <FontAwesomeIcon icon={faFileCircleExclamation} />
+                    {fileChangedChecking
+                      ? <span className="loading loading-spinner loading-xs" />
+                      : <FontAwesomeIcon icon={faFileCircleExclamation} />
+                    }
                     file changed, click to apply updates
                   </button>
                 )}
@@ -484,33 +513,36 @@ export const Dashboard = (): JSX.Element => {
               )}
 
               <div className="modal-action mt-3 shrink-0">
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-sm"
-                  onClick={() => { setPreviewStep("select"); setPreview(null); }}
-                  disabled={loadingConfig}
-                >
-                  Back
-                </button>
+                {previewCanGoBack && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => { setPreviewStep("select"); setPreview(null); }}
+                    disabled={loadingConfig}
+                  >
+                    Back
+                  </button>
+                )}
                 <button
                   type="button"
                   className="btn btn-ghost btn-sm"
                   onClick={closeLoadModal}
                   disabled={loadingConfig}
                 >
-                  Cancel
+                  {previewCanGoBack ? "Cancel" : "Close"}
                 </button>
-                <form onSubmit={handleLoadSubmit}>
-                  <button
-                    type="submit"
-                    className="btn btn-primary btn-sm"
-                    disabled={preview.errors.length > 0 || loadingConfig}
-                    title={preview.errors.length > 0 ? "Fix errors before applying" : undefined}
-                  >
-                    {loadingConfig && <span className="loading loading-spinner loading-xs" />}
-                    Apply Configuration
-                  </button>
-                </form>
+                {previewCanGoBack && preview.errors.length === 0 && (
+                  <form onSubmit={handleLoadSubmit}>
+                    <button
+                      type="submit"
+                      className="btn btn-primary btn-sm"
+                      disabled={loadingConfig}
+                    >
+                      {loadingConfig && <span className="loading loading-spinner loading-xs" />}
+                      Apply Configuration
+                    </button>
+                  </form>
+                )}
               </div>
             </>
           )}
