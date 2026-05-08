@@ -230,7 +230,13 @@ export const Dashboard = (): JSX.Element => {
               </span>
               <span className="flex items-center gap-2">
                 <span className="opacity-50 mr-1">Config</span>
-                <span className="font-mono">{cruise.config_filename ?? "—"}</span>
+                <span className="font-mono">{cruise.config_filename
+                  ? (() => {
+                      const parts = cruise.config_filename.split("/")
+                      const idx = parts.findIndex(p => p === "local" || p === "test")
+                      return idx >= 0 ? parts.slice(idx).join("/") : cruise.config_filename
+                    })()
+                  : "—"}</span>
                 {configFileChanged && (
                   <button
                     className="badge badge-warning badge-sm gap-1 cursor-pointer hover:badge-success disabled:opacity-50 disabled:cursor-not-allowed"
