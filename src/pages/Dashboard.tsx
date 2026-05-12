@@ -22,8 +22,9 @@ import { useLoggerStateWS } from "../hooks/useLoggerStateWS"
 import { ConfigFileBrowser } from "../components/ConfigFileBrowser"
 import { LogPanel, EntryRow } from "../components/LogPanel"
 import { apiUrl } from "../utils/api"
+import { dump as yamlDump } from "js-yaml"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faCircleInfo, faTriangleExclamation, faArrowUpRightFromSquare, faFileCircleExclamation } from "@fortawesome/free-solid-svg-icons"
+import { faCircleInfo, faTriangleExclamation, faArrowUpRightFromSquare, faFileCircleExclamation, faCopy, faCheck } from "@fortawesome/free-solid-svg-icons"
 
 const FALLBACK_POLL_MS = 60_000
 
@@ -77,16 +78,21 @@ export const Dashboard = (): JSX.Element => {
   const [viewConfigId, setViewConfigId] = useState<string | null>(null)
   const [viewConfigJson, setViewConfigJson] = useState<string | null>(null)
   const [viewConfigLoading, setViewConfigLoading] = useState(false)
+  const [viewConfigTab, setViewConfigTab] = useState<"json" | "yaml">("json")
+  const [viewConfigCopied, setViewConfigCopied] = useState(false)
 
   const cruiseConfigViewRef = useRef<HTMLDialogElement>(null)
   const [cruiseConfigPreview, setCruiseConfigPreview] = useState<ConfigPreview | null>(null)
   const [cruiseConfigLoading, setCruiseConfigLoading] = useState(false)
   const [cruiseConfigError, setCruiseConfigError] = useState<string | null>(null)
+  const [cruiseConfigTab, setCruiseConfigTab] = useState<"json" | "yaml">("json")
+  const [cruiseConfigCopied, setCruiseConfigCopied] = useState(false)
 
   const openConfigView = (configId: string) => {
     setViewConfigId(configId)
     setViewConfigJson(null)
     setViewConfigLoading(true)
+    setViewConfigTab("json")
     configViewRef.current?.showModal()
     fetch(apiUrl(`/configs/${encodeURIComponent(configId)}`))
       .then(r => r.json())
@@ -106,6 +112,7 @@ export const Dashboard = (): JSX.Element => {
     setCruiseConfigPreview(null)
     setCruiseConfigError(null)
     setCruiseConfigLoading(true)
+    setCruiseConfigTab("json")
     cruiseConfigViewRef.current?.showModal()
     const result = await dispatch(previewConfigurationThunk(cruise.config_filename))
     setCruiseConfigLoading(false)
@@ -589,18 +596,44 @@ export const Dashboard = (): JSX.Element => {
 
       {/* Config JSON Modal */}
       <dialog ref={configViewRef} className="modal">
-        <div className="modal-box max-w-2xl">
-          <h3 className="font-bold text-lg mb-3 font-mono">{viewConfigId}</h3>
+        <div className="modal-box max-w-2xl flex flex-col max-h-[85vh]">
+          <h3 className="font-bold text-lg mb-3 font-mono shrink-0">{viewConfigId}</h3>
           {viewConfigLoading ? (
             <div className="flex justify-center py-8">
               <span className="loading loading-spinner loading-md" />
             </div>
           ) : (
-            <pre className="bg-base-300 rounded-lg p-4 text-xs font-mono overflow-auto max-h-[60vh] whitespace-pre-wrap break-words">
-              {viewConfigJson}
-            </pre>
+            <>
+              <div className="flex items-center justify-between shrink-0 mb-2">
+                <div role="tablist" className="tabs tabs-border">
+                  <button role="tab" className={`tab ${viewConfigTab === "json" ? "tab-active" : ""}`} onClick={() => setViewConfigTab("json")}>JSON</button>
+                  <button role="tab" className={`tab ${viewConfigTab === "yaml" ? "tab-active" : ""}`} onClick={() => setViewConfigTab("yaml")}>YAML</button>
+                </div>
+                <button
+                  className="btn btn-ghost btn-sm btn-square"
+                  title="Copy to clipboard"
+                  onClick={() => {
+                    const text = viewConfigTab === "json"
+                      ? (viewConfigJson ?? "")
+                      : (() => { try { return yamlDump(JSON.parse(viewConfigJson ?? "")) } catch { return viewConfigJson ?? "" } })()
+                    void navigator.clipboard.writeText(text).then(() => {
+                      setViewConfigCopied(true)
+                      setTimeout(() => setViewConfigCopied(false), 2000)
+                    })
+                  }}
+                >
+                  <FontAwesomeIcon icon={viewConfigCopied ? faCheck : faCopy} className={viewConfigCopied ? "text-success" : ""} />
+                </button>
+              </div>
+              <pre className="bg-base-300 rounded-lg p-4 text-xs font-mono overflow-auto flex-1 min-h-0 whitespace-pre-wrap break-words">
+                {viewConfigTab === "json"
+                  ? viewConfigJson
+                  : (() => { try { return yamlDump(JSON.parse(viewConfigJson ?? "")) } catch { return viewConfigJson } })()
+                }
+              </pre>
+            </>
           )}
-          <div className="modal-action mt-3">
+          <div className="modal-action mt-3 shrink-0">
             <form method="dialog">
               <button className="btn btn-sm">Close</button>
             </form>
@@ -646,9 +679,33 @@ export const Dashboard = (): JSX.Element => {
                   </ul>
                 </div>
               )}
+              <div className="flex items-center justify-between shrink-0 mb-2">
+                <div role="tablist" className="tabs tabs-border">
+                  <button role="tab" className={`tab ${cruiseConfigTab === "json" ? "tab-active" : ""}`} onClick={() => setCruiseConfigTab("json")}>JSON</button>
+                  <button role="tab" className={`tab ${cruiseConfigTab === "yaml" ? "tab-active" : ""}`} onClick={() => setCruiseConfigTab("yaml")}>YAML</button>
+                </div>
+                <button
+                  className="btn btn-ghost btn-sm btn-square"
+                  title="Copy to clipboard"
+                  onClick={() => {
+                    const text = cruiseConfigTab === "json"
+                      ? JSON.stringify(cruiseConfigPreview.config, null, 2)
+                      : yamlDump(cruiseConfigPreview.config)
+                    void navigator.clipboard.writeText(text).then(() => {
+                      setCruiseConfigCopied(true)
+                      setTimeout(() => setCruiseConfigCopied(false), 2000)
+                    })
+                  }}
+                >
+                  <FontAwesomeIcon icon={cruiseConfigCopied ? faCheck : faCopy} className={cruiseConfigCopied ? "text-success" : ""} />
+                </button>
+              </div>
               <div className="flex-1 overflow-y-auto min-h-0">
                 <pre className="bg-base-300 rounded p-3 text-xs font-mono whitespace-pre-wrap break-words">
-                  {JSON.stringify(cruiseConfigPreview.config, null, 2)}
+                  {cruiseConfigTab === "json"
+                    ? JSON.stringify(cruiseConfigPreview.config, null, 2)
+                    : yamlDump(cruiseConfigPreview.config)
+                  }
                 </pre>
               </div>
             </>
