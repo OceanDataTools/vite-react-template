@@ -7,7 +7,7 @@ import type { RootState } from "../app/store"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faExpand, faCompress, faArrowUpRightFromSquare, faTriangleExclamation } from "@fortawesome/free-solid-svg-icons"
 import { EntryRow } from "./LogPanel"
-import { apiUrl } from "../utils/api"
+import { useAuthFetch } from "../hooks/useAuthFetch"
 
 const CDS_STATUS_BADGE: Record<string, string> = {
   RUNNING:  "badge-success",
@@ -40,6 +40,7 @@ export function LoggerStatusPanel({
   const loggerLastLevel = useAppSelector((s: RootState) => s.openrvdas.loggerLastLevel)
   const logEntries      = useAppSelector((s: RootState) => s.openrvdas.logEntries)
 
+  const { authFetch } = useAuthFetch()
   const modalRef = useRef<HTMLDialogElement>(null)
   const logContainerRef = useRef<HTMLDivElement>(null)
   const [selected, setSelected] = useState<SelectedLogger | null>(null)
@@ -51,7 +52,7 @@ export function LoggerStatusPanel({
     setConfigJson(null)
     if (logger.activeConfig) {
       setConfigLoading(true)
-      fetch(apiUrl(`/configs/${encodeURIComponent(logger.activeConfig)}`))
+      authFetch(`/configs/${encodeURIComponent(logger.activeConfig)}`)
         .then(r => r.json())
         .then((d: { config_json?: string }) => {
           try {
@@ -144,17 +145,17 @@ export function LoggerStatusPanel({
                   const badgeSizeClass = tileRem < 10 ? "badge-xs" : tileRem < 15 ? "badge-sm" : "badge-md"
 
                   return loggers.map(logger => {
-                    const cdsEntry = loggerStatuses[logger.id]
+                    const cdsEntry = loggerStatuses[logger.id] as (typeof loggerStatuses)[string] | undefined
                     const statusIsFresh =
                       logger.active_config != null &&
                       cdsEntry?.config === logger.active_config
-                    const effectiveStatus = statusIsFresh ? (cdsEntry?.status ?? null) : null
+                    const effectiveStatus = statusIsFresh ? cdsEntry.status : null
                     const badgeClass = effectiveStatus
                       ? (CDS_STATUS_BADGE[effectiveStatus] ?? "badge-ghost")
                       : (logger.running ? "badge-success" : "badge-ghost")
                     const statusLabel = effectiveStatus ?? (logger.running ? "RUNNING" : "EXITED")
 
-                    const lvl = loggerLastLevel[logger.id]
+                    const lvl = loggerLastLevel[logger.id] as (typeof loggerLastLevel)[string] | undefined
                     const hasWarning = lvl != null && lvl.levelno >= 30
                     const isError = hasWarning && lvl.levelno >= 40
 

@@ -1,8 +1,8 @@
 import type { JSX } from "react"
 import { useState } from "react"
-import { useAppSelector } from "../app/hooks"
-import type { RootState } from "../app/store"
-import { apiUrl } from "../utils/api"
+import { useAuthFetch } from "../hooks/useAuthFetch"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faCopy, faCheck } from "@fortawesome/free-solid-svg-icons"
 
 type VerifyResult = {
   full_match: boolean
@@ -11,14 +11,49 @@ type VerifyResult = {
   partial_format: string | null
 }
 
-export const VerifyParserPage = (): JSX.Element => {
-  const token = useAppSelector((state: RootState) => state.auth.token)
+const KNOWN_TYPES = new Set([
+  // parse built-in
+  'w', 'W', 's', 'S', 'd', 'D', 'n', 'l', 'L', 'a', 'b',
+  'e', 'E', 'f', 'F', 'g', 'G', 'x', 'X', 'o',
+  'ti', 'te', 'tg', 'ta', 'tc', 'tt', 'th', 'ts',
+  // OpenRVDAS custom
+  'od', 'of', 'og', 'ow', 'os', 'nlat', 'nlat_dir', 'nc', 'ns', 'anything',
+])
 
-  const [rawString, setRawString] = useState("")
-  const [formatString, setFormatString] = useState("")
+function validateFormatString(s: string): string[] {
+  const errors: string[] = []
+  let i = 0
+  while (i < s.length) {
+    if (s[i] === '{' && s[i + 1] === '{') { i += 2; continue }
+    if (s[i] === '}' && s[i + 1] === '}') { i += 2; continue }
+    if (s[i] === '}') { errors.push(`Unexpected '}' at position ${String(i + 1)}`); i++; continue }
+    if (s[i] === '{') {
+      const end = s.indexOf('}', i)
+      if (end === -1) { errors.push(`Unclosed '{' at position ${String(i + 1)}`); break }
+      const spec = s.slice(i + 1, end)
+      const colon = spec.indexOf(':')
+      if (colon !== -1) {
+        const type = spec.slice(colon + 1).trim()
+        if (type && /^[a-z_]+$/i.test(type) && !KNOWN_TYPES.has(type))
+          errors.push(`Unknown type '${type}' in '{${spec}}'`)
+      }
+      i = end + 1; continue
+    }
+    i++
+  }
+  return errors
+}
+
+export const VerifyParserPage = (): JSX.Element => {
+  const { authFetch } = useAuthFetch()
+
+  const [rawString, setRawString] = useState(() => localStorage.getItem("verifyParser.rawString") ?? "")
+  const [formatString, setFormatString] = useState(() => localStorage.getItem("verifyParser.formatString") ?? "")
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<VerifyResult | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [guideOpen, setGuideOpen] = useState(false)
+  const [formatCopied, setFormatCopied] = useState(false)
 
   const handleVerify = async () => {
     if (!rawString || !formatString) return
@@ -28,10 +63,9 @@ export const VerifyParserPage = (): JSX.Element => {
 
     const params = new URLSearchParams({ format_string: formatString, raw_string: rawString })
     try {
-      // fetchWithAuth needs the thunkAPI shape; call fetch directly with the token instead
-      const res = await fetch(
-        `${apiUrl("/configuration/verify-parser")}?${params.toString()}`,
-        { method: "POST", headers: { Authorization: `Bearer ${token ?? ""}` } },
+      const res = await authFetch(
+        `/configuration/verify-parser?${params.toString()}`,
+        { method: "POST" },
       )
       if (!res.ok) {
         const d = await res.json().catch(() => ({})) as { detail?: string }
@@ -46,10 +80,11 @@ export const VerifyParserPage = (): JSX.Element => {
     }
   }
 
-  const canSubmit = rawString.trim() !== "" && formatString.trim() !== ""
+  const formatErrors = formatString ? validateFormatString(formatString) : []
+  const canSubmit = rawString.trim() !== "" && formatString.trim() !== "" && formatErrors.length === 0
 
   return (
-    <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-6">
+    <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6 w-full">
       <h1 className="text-xl font-bold">Verify Parser Format</h1>
 
       <div className="card bg-base-200 shadow-sm border border-base-300">
@@ -59,26 +94,46 @@ export const VerifyParserPage = (): JSX.Element => {
               <span className="label-text font-medium">Raw data string</span>
             </label>
             <textarea
-              className="textarea textarea-bordered font-mono text-sm resize-none"
+              className="textarea textarea-bordered font-mono text-sm resize-y w-full"
               rows={3}
               placeholder="$GPGLL,2203.672,S,01759.539,W"
               value={rawString}
-              onChange={e => { setRawString(e.target.value) }}
+              onChange={e => { setRawString(e.target.value); localStorage.setItem("verifyParser.rawString", e.target.value) }}
             />
           </div>
 
           <div className="form-control">
-            <label className="label">
-              <span className="label-text font-medium">Parser format string</span>
-              <span className="label-text-alt opacity-50 text-xs">PyPi parse syntax</span>
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <span className="label-text font-medium">Parser format string <span className="opacity-50 text-xs font-normal">— PyPi parse syntax</span></span>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm btn-square"
+                title="Copy format string"
+                disabled={!formatString}
+                onClick={() => {
+                  void navigator.clipboard.writeText(formatString).then(() => {
+                    setFormatCopied(true)
+                    setTimeout(() => { setFormatCopied(false); }, 2000)
+                  })
+                }}
+              >
+                <FontAwesomeIcon icon={formatCopied ? faCheck : faCopy} className={formatCopied ? "text-success" : ""} />
+              </button>
+            </div>
             <textarea
-              className="textarea textarea-bordered font-mono text-sm resize-none"
+              className={`textarea textarea-bordered font-mono text-sm resize-y w-full ${formatErrors.length > 0 ? "textarea-error" : ""}`}
               rows={3}
               placeholder="$GPGLL,{Latitude:nlat},{NorS:w},{Longitude:nlat},{EorW:w}"
               value={formatString}
-              onChange={e => { setFormatString(e.target.value); setResult(null); setError(null) }}
+              onChange={e => { setFormatString(e.target.value); localStorage.setItem("verifyParser.formatString", e.target.value); setResult(null); setError(null) }}
             />
+            {formatErrors.length > 0 && (
+              <ul className="mt-1 space-y-0.5">
+                {formatErrors.map((err, i) => (
+                  <li key={i} className="text-error text-xs font-mono">{err}</li>
+                ))}
+              </ul>
+            )}
             <label className="label">
               <span className="label-text-alt opacity-40 text-xs">
                 Custom types: <code>od</code> <code>of</code> <code>og</code> <code>ow</code> <code>os</code> <code>nlat</code> <code>nc</code> <code>ns</code> <code>anything</code>
@@ -98,6 +153,66 @@ export const VerifyParserPage = (): JSX.Element => {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Type reference */}
+      <div className="card bg-base-200 shadow-sm border border-base-300">
+        <div
+          className="card-body py-3 px-5 cursor-pointer select-none font-medium text-sm flex items-center justify-between"
+          onClick={() => { setGuideOpen(prev => !prev); }}
+        >
+          <span>Parser type reference</span>
+          <span className="opacity-40 text-xs">{guideOpen ? "click to collapse" : "click to expand"}</span>
+        </div>
+        {guideOpen && <div className="px-5 pb-4 space-y-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide opacity-50 mb-2">Built-in types (parse library)</p>
+            <div className="overflow-x-auto">
+              <table className="table table-xs font-mono w-full">
+                <thead>
+                  <tr><th>Type</th><th>Matches</th><th>Returns</th><th>Example</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>d</td><td>Digits</td><td>int</td><td>42</td></tr>
+                  <tr><td>f</td><td>Float</td><td>float</td><td>3.14</td></tr>
+                  <tr><td>e</td><td>Scientific notation</td><td>float</td><td>2.5e3</td></tr>
+                  <tr><td>g</td><td>General number</td><td>float</td><td>42 or 3.14</td></tr>
+                  <tr><td>w</td><td>Letters, digits, underscore</td><td>str</td><td>hello_1</td></tr>
+                  <tr><td>l</td><td>Letters only</td><td>str</td><td>abc</td></tr>
+                  <tr><td>s</td><td>Whitespace</td><td>str</td><td>{"  "}</td></tr>
+                  <tr><td>x</td><td>Hex integer (lowercase)</td><td>int</td><td>ff</td></tr>
+                  <tr><td>o</td><td>Octal integer</td><td>int</td><td>77</td></tr>
+                  <tr><td>b</td><td>Binary integer</td><td>int</td><td>1010</td></tr>
+                  <tr><td>ti</td><td>ISO 8601 datetime</td><td>datetime</td><td>2021-01-01T12:00:00</td></tr>
+                  <tr><td>tt</td><td>Time hh:mm:ss</td><td>time</td><td>12:30:00</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide opacity-50 mb-2">OpenRVDAS custom types</p>
+            <div className="overflow-x-auto">
+              <table className="table table-xs font-mono w-full">
+                <thead>
+                  <tr><th>Type</th><th>Description</th><th>Returns</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>od</td><td>Optional integer — None if empty</td><td>int | None</td></tr>
+                  <tr><td>of</td><td>Optional float — None if empty</td><td>float | None</td></tr>
+                  <tr><td>og</td><td>Optional number — treats #VALUE! as None</td><td>float | None</td></tr>
+                  <tr><td>ow</td><td>Optional word (letters/digits/_) — None if empty</td><td>str | None</td></tr>
+                  <tr><td>os</td><td>Optional string (any chars) — empty string if missing</td><td>str</td></tr>
+                  <tr><td>nlat</td><td>NMEA lat/lon (DDDMM.MMMM) → decimal degrees (numeric part only)</td><td>float | None</td></tr>
+                  <tr><td>nlat_dir</td><td>NMEA lat/lon + hemisphere (N/S/E/W) → signed decimal degrees</td><td>float | None</td></tr>
+                  <tr><td>nc</td><td>Any text not containing a comma</td><td>str | None</td></tr>
+                  <tr><td>ns</td><td>Any text not containing * (asterisk)</td><td>str | None</td></tr>
+                  <tr><td>anything</td><td>Any text, greedy — useful at end of pattern</td><td>str</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <p className="text-xs opacity-40">Usage: <code className="font-mono">{"{{FieldName:type}}"}</code> e.g. <code className="font-mono">{"{{Latitude:nlat}}"}</code> or <code className="font-mono">{"{{Speed:of}}"}</code></p>
+        </div>}
       </div>
 
       {error && (

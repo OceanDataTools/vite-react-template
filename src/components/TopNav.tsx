@@ -111,7 +111,7 @@ export const TopNav = (): JSX.Element => {
                     <button
                       onClick={() => {
                         (document.activeElement as HTMLElement | null)?.blur()
-                        navigate(path)
+                        void navigate(path)
                       }}
                     >
                       {label}

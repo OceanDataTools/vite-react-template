@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { apiUrl } from "../utils/api"
+import { useAuthFetch } from "../hooks/useAuthFetch"
 
 type FileEntry = {
   name: string
@@ -9,12 +9,12 @@ type FileEntry = {
 }
 
 type Props = {
-  token: string
   selected: string | null
   onSelect: (absPath: string) => void
 }
 
-export function ConfigFileBrowser({ token, selected, onSelect }: Props) {
+export function ConfigFileBrowser({ selected, onSelect }: Props) {
+  const { authFetch } = useAuthFetch()
   const [path, setPath] = useState("")
   const [entries, setEntries] = useState<FileEntry[]>([])
   const [loading, setLoading] = useState(false)
@@ -23,9 +23,7 @@ export function ConfigFileBrowser({ token, selected, onSelect }: Props) {
   useEffect(() => {
     setLoading(true)
     setError(null)
-    fetch(apiUrl(`/configuration/files?path=${encodeURIComponent(path)}`), {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    authFetch(`/configuration/files?path=${encodeURIComponent(path)}`)
       .then(res =>
         res.ok
           ? res.json()
@@ -38,7 +36,7 @@ export function ConfigFileBrowser({ token, selected, onSelect }: Props) {
       })
       .catch((e: unknown) => { setError(e instanceof Error ? e.message : String(e)); })
       .finally(() => { setLoading(false); })
-  }, [path, token])
+  }, [path, authFetch])
 
   const segments = path ? path.split("/") : []
 
