@@ -1,26 +1,18 @@
 import type { JSX } from "react"
-import { useRef, useState, useEffect } from "react"
+import { useState } from "react"
 import { useLocalStorage } from "../hooks/useLocalStorage"
 import { useLocation } from "react-router-dom"
 import { useAppSelector } from "../app/hooks"
 import type { RootState } from "../app/store"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faExpand, faCompress, faArrowUpRightFromSquare, faTriangleExclamation } from "@fortawesome/free-solid-svg-icons"
-import { EntryRow } from "./LogPanel"
-import { useAuthFetch } from "../hooks/useAuthFetch"
+import { LoggerDetailModal } from "./LoggerDetailModal"
 
 const CDS_STATUS_BADGE: Record<string, string> = {
   RUNNING:  "badge-success",
   STARTING: "badge-warning",
   FAILED:   "badge-error",
   EXITED:   "badge-ghost",
-}
-
-type SelectedLogger = {
-  id: string
-  activeConfig: string | null
-  statusLabel: string
-  badgeClass: string
 }
 
 export function LoggerStatusPanel({
@@ -35,37 +27,11 @@ export function LoggerStatusPanel({
   const { pathname } = useLocation()
   const [tileRem, setTileRem] = useLocalStorage("loggerStatusPanel.tileRem", 22)
 
-  const loggers         = useAppSelector((s: RootState) => s.openrvdas.loggers)
-  const loggerStatuses  = useAppSelector((s: RootState) => s.openrvdas.loggerStatuses)
+  const loggers        = useAppSelector((s: RootState) => s.openrvdas.loggers)
+  const loggerStatuses = useAppSelector((s: RootState) => s.openrvdas.loggerStatuses)
   const loggerLastLevel = useAppSelector((s: RootState) => s.openrvdas.loggerLastLevel)
-  const logEntries      = useAppSelector((s: RootState) => s.openrvdas.logEntries)
 
-  const { authFetch } = useAuthFetch()
-  const modalRef = useRef<HTMLDialogElement>(null)
-  const logContainerRef = useRef<HTMLDivElement>(null)
-  const [selected, setSelected] = useState<SelectedLogger | null>(null)
-  const [configJson, setConfigJson] = useState<string | null>(null)
-  const [configLoading, setConfigLoading] = useState(false)
-
-  const openModal = (logger: SelectedLogger) => {
-    setSelected(logger)
-    setConfigJson(null)
-    if (logger.activeConfig) {
-      setConfigLoading(true)
-      authFetch(`/configs/${encodeURIComponent(logger.activeConfig)}`)
-        .then(r => r.json())
-        .then((d: { config_json?: string }) => {
-          try {
-            setConfigJson(JSON.stringify(JSON.parse(d.config_json ?? ""), null, 2))
-          } catch {
-            setConfigJson(d.config_json ?? "")
-          }
-        })
-        .catch(() => { setConfigJson("Failed to load config."); })
-        .finally(() => { setConfigLoading(false); })
-    }
-    modalRef.current?.showModal()
-  }
+  const [detailLogger, setDetailLogger] = useState<string | null>(null)
 
   const outerClass = expanded
     ? "flex-1 flex flex-col min-h-0 bg-base-200"
@@ -73,21 +39,6 @@ export function LoggerStatusPanel({
   const innerClass = expanded
     ? "flex-1 flex flex-col min-h-0 space-y-2 py-3 px-5"
     : `card-body py-3 px-5 space-y-2 ${fullHeight ? "flex-1 flex flex-col min-h-0" : ""}`
-
-  const recentEntries = selected
-    ? logEntries
-        .filter(e =>
-          e.source === selected.id ||
-          (e.source === "logger_manager" && e.message.includes(selected.id))
-        )
-        .slice(-30)
-        .sort((a, b) => a.timestamp - b.timestamp)
-    : []
-
-  useEffect(() => {
-    const el = logContainerRef.current
-    if (el) el.scrollTop = el.scrollHeight
-  }, [recentEntries.length, selected?.id])
 
   return (
     <>
@@ -163,7 +114,7 @@ export function LoggerStatusPanel({
                       <div
                         key={logger.id}
                         className="bg-base-300 border border-base-content/10 p-3 flex flex-col gap-1 min-w-0 cursor-pointer hover:bg-base-content/10 transition-colors"
-                        onClick={() => { openModal({ id: logger.id, activeConfig: logger.active_config, statusLabel, badgeClass }); }}
+                        onClick={() => { setDetailLogger(logger.id); }}
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           {hasWarning && (
@@ -195,57 +146,7 @@ export function LoggerStatusPanel({
         </div>
       </div>
 
-      {/* Logger detail modal */}
-      <dialog ref={modalRef} className="modal">
-        <div className="modal-box max-w-2xl flex flex-col max-h-[80vh]">
-          {selected && (
-            <>
-              <div className="flex items-center gap-3 mb-4 shrink-0">
-                <h3 className="font-bold text-lg font-mono">{selected.id}</h3>
-                <span className={`badge badge-sm ${selected.badgeClass}`}>{selected.statusLabel}</span>
-              </div>
-
-              {/* Recent log entries */}
-              <h4 className="font-semibold text-sm mb-1 shrink-0">Recent logs</h4>
-              <div ref={logContainerRef} className="bg-base-300 rounded-lg p-3 mb-4 overflow-y-auto shrink-0 max-h-48 text-xs">
-                {recentEntries.length === 0
-                  ? <p className="text-xs opacity-40 font-mono">No log entries.</p>
-                  : recentEntries.map((e, i) => <EntryRow key={i} entry={e} />)
-                }
-              </div>
-
-              {/* Config JSON */}
-              <h4 className="font-semibold text-sm mb-1 shrink-0">
-                Config
-                {selected.activeConfig && (
-                  <span className="font-mono font-normal opacity-50 ml-2">{selected.activeConfig}</span>
-                )}
-              </h4>
-              <div className="flex-1 overflow-y-auto min-h-0">
-                {!selected.activeConfig ? (
-                  <p className="text-xs opacity-40 font-mono">No active config.</p>
-                ) : configLoading ? (
-                  <div className="flex justify-center py-6">
-                    <span className="loading loading-spinner loading-sm" />
-                  </div>
-                ) : (
-                  <pre className="bg-base-300 rounded-lg p-3 text-xs font-mono whitespace-pre-wrap break-words">
-                    {configJson}
-                  </pre>
-                )}
-              </div>
-            </>
-          )}
-          <div className="modal-action mt-3 shrink-0">
-            <form method="dialog">
-              <button className="btn btn-sm">Close</button>
-            </form>
-          </div>
-        </div>
-        <form method="dialog" className="modal-backdrop">
-          <button>close</button>
-        </form>
-      </dialog>
+      <LoggerDetailModal loggerId={detailLogger} onClose={() => { setDetailLogger(null); }} />
     </>
   )
 }
