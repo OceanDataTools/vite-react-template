@@ -16,25 +16,32 @@ export async function fetchWithAuth(
   const { dispatch, getState } = thunkAPI
   const url = apiUrl(path)
 
-  const getAuthHeaders = (token: string): Record<string, string> => ({
-    Authorization: `Bearer ${token}`,
+  const buildHeaders = (token: string | null): Record<string, string> => ({
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.body ? { "Content-Type": "application/json" } : {}),
   })
 
-  const token = getState().auth.token
-  if (!token) throw new Error("Missing access token")
+  const extraHeaders =
+    typeof options.headers === "object" && !(options.headers instanceof Headers)
+      ? (options.headers as Record<string, string>)
+      : {}
 
-  // First attempt with current access token
+  const token = getState().auth.token
+
+  // No token — make unauthenticated request (read-only endpoints are open)
+  if (!token) {
+    return fetch(url, {
+      ...options,
+      credentials: "include",
+      headers: { ...buildHeaders(null), ...extraHeaders },
+    })
+  }
+
+  // Authenticated request
   const response = await fetch(url, {
     ...options,
-    credentials: "include", // include httpOnly refresh cookie
-    headers: {
-      ...getAuthHeaders(token),
-      ...(typeof options.headers === "object" &&
-      !(options.headers instanceof Headers)
-        ? options.headers
-        : {}),
-    },
+    credentials: "include",
+    headers: { ...buildHeaders(token), ...extraHeaders },
   })
 
   if (response.status !== 401) return response
