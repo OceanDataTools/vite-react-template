@@ -20,8 +20,8 @@ import {
 import type { ConfigPreview } from "../features/openrvdas/openrvdasThunks"
 import { useLoggerStateWS } from "../hooks/useLoggerStateWS"
 import { ConfigFileBrowser } from "../components/ConfigFileBrowser"
-import { LogPanel, EntryRow } from "../components/LogPanel"
-import { useAuthFetch } from "../hooks/useAuthFetch"
+import { LogPanel } from "../components/LogPanel"
+import { LoggerDetailModal } from "../components/LoggerDetailModal"
 import { dump as yamlDump } from "js-yaml"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faCircleInfo, faTriangleExclamation, faArrowUpRightFromSquare, faFileCircleExclamation, faCopy, faCheck } from "@fortawesome/free-solid-svg-icons"
@@ -47,7 +47,7 @@ const CDS_STATUS_BADGE: Record<string, string> = {
 
 export const Dashboard = (): JSX.Element => {
   const dispatch = useAppDispatch()
-  const { cruise, modes, loggers, loggerStatuses, loggerLastLevel, logEntries, loading, activatingCount, error, loadingConfig, loadConfigError } =
+  const { cruise, modes, loggers, loggerStatuses, loggerLastLevel, loading, activatingCount, error, loadingConfig, loadConfigError } =
     useAppSelector((state: RootState) => state.openrvdas)
   const configFileChanged = cruise?.config_file_changed ?? false
   const activating = activatingCount > 0
@@ -57,61 +57,19 @@ export const Dashboard = (): JSX.Element => {
 
   const dialogRef = useRef<HTMLDialogElement>(null)
   const [selectedFile, setSelectedFile] = useState<string | null>(null)
-  const logHistoryRef = useRef<HTMLDialogElement>(null)
-  const [logHistoryLogger, setLogHistoryLogger] = useState<string | null>(null)
-  const logHistoryBottomRef = useRef<HTMLDivElement>(null)
-
-  const openLogHistory = (loggerId: string) => {
-    setLogHistoryLogger(loggerId)
-    logHistoryRef.current?.showModal()
-  }
-
-  useEffect(() => {
-    if (logHistoryRef.current?.open) {
-      logHistoryBottomRef.current?.scrollIntoView({ behavior: "instant" })
-    }
-  }, [logHistoryLogger, logEntries.length])
-
-  const { authFetch } = useAuthFetch()
-  const configViewRef = useRef<HTMLDialogElement>(null)
-  const [viewConfigId, setViewConfigId] = useState<string | null>(null)
-  const [viewConfigJson, setViewConfigJson] = useState<string | null>(null)
-  const [viewConfigLoading, setViewConfigLoading] = useState(false)
-  const [viewConfigTab, setViewConfigTab] = useState<"json" | "yaml">("json")
-  const [viewConfigCopied, setViewConfigCopied] = useState(false)
+  const [detailLogger, setDetailLogger] = useState<string | null>(null)
 
   const cruiseConfigViewRef = useRef<HTMLDialogElement>(null)
   const [cruiseConfigPreview, setCruiseConfigPreview] = useState<ConfigPreview | null>(null)
   const [cruiseConfigLoading, setCruiseConfigLoading] = useState(false)
   const [cruiseConfigError, setCruiseConfigError] = useState<string | null>(null)
-  const [cruiseConfigTab, setCruiseConfigTab] = useState<"json" | "yaml">("json")
   const [cruiseConfigCopied, setCruiseConfigCopied] = useState(false)
-
-  const openConfigView = (configId: string) => {
-    setViewConfigId(configId)
-    setViewConfigJson(null)
-    setViewConfigLoading(true)
-    setViewConfigTab("json")
-    configViewRef.current?.showModal()
-    authFetch(`/configs/${encodeURIComponent(configId)}`)
-      .then(r => r.json())
-      .then((d: { config_json?: string }) => {
-        try {
-          setViewConfigJson(JSON.stringify(JSON.parse(d.config_json ?? ""), null, 2))
-        } catch {
-          setViewConfigJson(d.config_json ?? "")
-        }
-      })
-      .catch(() => { setViewConfigJson("Failed to load config."); })
-      .finally(() => { setViewConfigLoading(false); })
-  }
 
   const openCruiseConfigView = async () => {
     if (!cruise?.config_filename) return
     setCruiseConfigPreview(null)
     setCruiseConfigError(null)
     setCruiseConfigLoading(true)
-    setCruiseConfigTab("json")
     cruiseConfigViewRef.current?.showModal()
     const result = await dispatch(previewConfigurationThunk(cruise.config_filename))
     setCruiseConfigLoading(false)
@@ -404,7 +362,7 @@ export const Dashboard = (): JSX.Element => {
                               return (
                                 <button
                                   className="btn btn-ghost btn-xs p-0 min-h-0 h-auto"
-                                  onClick={() => { openLogHistory(logger.id); }}
+                                  onClick={() => { setDetailLogger(logger.id); }}
                                   title={`Last message: ${lvl.levelname} — click to view recent logs`}
                                 >
                                   <FontAwesomeIcon
@@ -449,8 +407,8 @@ export const Dashboard = (): JSX.Element => {
                             {logger.active_config && (
                               <button
                                 className="btn btn-ghost btn-xs opacity-40 hover:opacity-100 shrink-0"
-                                onClick={() => { if (logger.active_config) openConfigView(logger.active_config) }}
-                                title="View config JSON"
+                                onClick={() => { setDetailLogger(logger.id); }}
+                                title="View logger detail"
                               >
                                 <FontAwesomeIcon icon={faCircleInfo} size="2x" />
                               </button>
@@ -592,55 +550,7 @@ export const Dashboard = (): JSX.Element => {
         </form>
       </dialog>
 
-      {/* Config JSON Modal */}
-      <dialog ref={configViewRef} className="modal">
-        <div className="modal-box max-w-2xl flex flex-col max-h-[85vh]">
-          <h3 className="font-bold text-lg mb-3 font-mono shrink-0">{viewConfigId}</h3>
-          {viewConfigLoading ? (
-            <div className="flex justify-center py-8">
-              <span className="loading loading-spinner loading-md" />
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center justify-between shrink-0 mb-2">
-                <div role="tablist" className="tabs tabs-border">
-                  <button role="tab" className={`tab ${viewConfigTab === "json" ? "tab-active" : ""}`} onClick={() => { setViewConfigTab("json"); }}>JSON</button>
-                  <button role="tab" className={`tab ${viewConfigTab === "yaml" ? "tab-active" : ""}`} onClick={() => { setViewConfigTab("yaml"); }}>YAML</button>
-                </div>
-                <button
-                  className="btn btn-ghost btn-sm btn-square"
-                  title="Copy to clipboard"
-                  onClick={() => {
-                    const text = viewConfigTab === "json"
-                      ? (viewConfigJson ?? "")
-                      : (() => { try { return yamlDump(JSON.parse(viewConfigJson ?? "")) } catch { return viewConfigJson ?? "" } })()
-                    void navigator.clipboard.writeText(text).then(() => {
-                      setViewConfigCopied(true)
-                      setTimeout(() => { setViewConfigCopied(false); }, 2000)
-                    })
-                  }}
-                >
-                  <FontAwesomeIcon icon={viewConfigCopied ? faCheck : faCopy} className={viewConfigCopied ? "text-success" : ""} />
-                </button>
-              </div>
-              <pre className="bg-base-300 rounded-lg p-4 text-xs font-mono overflow-auto flex-1 min-h-0 whitespace-pre-wrap break-words">
-                {viewConfigTab === "json"
-                  ? viewConfigJson
-                  : (() => { try { return yamlDump(JSON.parse(viewConfigJson ?? "")) } catch { return viewConfigJson } })()
-                }
-              </pre>
-            </>
-          )}
-          <div className="modal-action mt-3 shrink-0">
-            <form method="dialog">
-              <button className="btn btn-sm">Close</button>
-            </form>
-          </div>
-        </div>
-        <form method="dialog" className="modal-backdrop">
-          <button>close</button>
-        </form>
-      </dialog>
+      <LoggerDetailModal loggerId={detailLogger} onClose={() => { setDetailLogger(null); }} />
 
       {/* Cruise Processed Config Modal */}
       <dialog ref={cruiseConfigViewRef} className="modal">
@@ -677,19 +587,12 @@ export const Dashboard = (): JSX.Element => {
                   </ul>
                 </div>
               )}
-              <div className="flex items-center justify-between shrink-0 mb-2">
-                <div role="tablist" className="tabs tabs-border">
-                  <button role="tab" className={`tab ${cruiseConfigTab === "json" ? "tab-active" : ""}`} onClick={() => { setCruiseConfigTab("json"); }}>JSON</button>
-                  <button role="tab" className={`tab ${cruiseConfigTab === "yaml" ? "tab-active" : ""}`} onClick={() => { setCruiseConfigTab("yaml"); }}>YAML</button>
-                </div>
+              <div className="flex justify-end shrink-0 mb-2">
                 <button
                   className="btn btn-ghost btn-sm btn-square"
                   title="Copy to clipboard"
                   onClick={() => {
-                    const text = cruiseConfigTab === "json"
-                      ? JSON.stringify(cruiseConfigPreview.config, null, 2)
-                      : yamlDump(cruiseConfigPreview.config)
-                    void navigator.clipboard.writeText(text).then(() => {
+                    void navigator.clipboard.writeText(yamlDump(cruiseConfigPreview.config)).then(() => {
                       setCruiseConfigCopied(true)
                       setTimeout(() => { setCruiseConfigCopied(false); }, 2000)
                     })
@@ -700,10 +603,7 @@ export const Dashboard = (): JSX.Element => {
               </div>
               <div className="flex-1 overflow-y-auto min-h-0">
                 <pre className="bg-base-300 rounded p-3 text-xs font-mono whitespace-pre-wrap break-words">
-                  {cruiseConfigTab === "json"
-                    ? JSON.stringify(cruiseConfigPreview.config, null, 2)
-                    : yamlDump(cruiseConfigPreview.config)
-                  }
+                  {yamlDump(cruiseConfigPreview.config)}
                 </pre>
               </div>
             </>
@@ -719,36 +619,6 @@ export const Dashboard = (): JSX.Element => {
         </form>
       </dialog>
 
-      {/* Logger Log History Modal */}
-      <dialog ref={logHistoryRef} className="modal">
-        <div className="modal-box max-w-4xl w-full">
-          <h3 className="font-bold text-lg mb-3 font-mono">{logHistoryLogger}</h3>
-          <div className="bg-base-300 rounded-lg p-3 space-y-0.5 max-h-[75vh] overflow-y-auto text-xs">
-            {logHistoryLogger && (() => {
-              const id = logHistoryLogger
-              const recent = logEntries
-                .filter(e =>
-                  e.source === id ||
-                  (e.source === "logger_manager" && e.message.includes(id))
-                )
-                .slice(-30)
-                .sort((a, b) => a.timestamp - b.timestamp)
-              return recent.length === 0
-                ? <p className="text-xs opacity-40 font-mono">No log entries yet.</p>
-                : recent.map((e, i) => <EntryRow key={i} entry={e} />)
-            })()}
-            <div ref={logHistoryBottomRef} />
-          </div>
-          <div className="modal-action mt-3">
-            <form method="dialog">
-              <button className="btn btn-sm">Close</button>
-            </form>
-          </div>
-        </div>
-        <form method="dialog" className="modal-backdrop">
-          <button>close</button>
-        </form>
-      </dialog>
     </div>
   )
 }
