@@ -141,7 +141,7 @@ export const openrvdasSlice = createSlice({
       })
       .addCase(fetchModesThunk.rejected, (state, action) => {
         state.loading = false
-        state.error = (action.payload as string | undefined) ?? "Failed to fetch modes"
+        state.error = (action.payload) ?? "Failed to fetch modes"
       })
       .addCase(fetchLoggersThunk.fulfilled, (state, action) => {
         state.loggers = action.payload

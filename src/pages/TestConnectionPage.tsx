@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { useAppSelector } from "../app/hooks"
 import type { RootState } from "../app/store"
 import { AppConfig } from "../config"
-import { apiUrl } from "../utils/api"
+import { useAuthFetch } from "../hooks/useAuthFetch"
 import { dump as yamlDump } from "js-yaml"
 
 const TEMPLATES: Record<string, string> = {
@@ -53,9 +53,10 @@ function readerLabel(reader: ImportReader): string {
 
 export const TestConnectionPage = (): JSX.Element => {
   const token = useAppSelector((state: RootState) => state.auth.token)
+  const { authFetch, freshToken } = useAuthFetch()
 
-  const [activeTemplate, setActiveTemplate] = useState("Serial Port")
-  const [configYaml, setConfigYaml] = useState(TEMPLATES["Serial Port"])
+  const [activeTemplate, setActiveTemplate] = useState(() => localStorage.getItem("testConnection.activeTemplate") ?? "Serial Port")
+  const [configYaml, setConfigYaml] = useState(() => localStorage.getItem("testConnection.configYaml") ?? TEMPLATES["Serial Port"])
   const [running, setRunning] = useState(false)
   const [log, setLog] = useState<LogEntry[]>([])
 
@@ -84,6 +85,8 @@ export const TestConnectionPage = (): JSX.Element => {
   const selectTemplate = (name: string) => {
     setActiveTemplate(name)
     setConfigYaml(TEMPLATES[name])
+    localStorage.setItem("testConnection.activeTemplate", name)
+    localStorage.setItem("testConnection.configYaml", TEMPLATES[name])
   }
 
   const openImport = () => {
@@ -92,27 +95,26 @@ export const TestConnectionPage = (): JSX.Element => {
     setImportError(null)
     setImportLoading(true)
     importRef.current?.showModal()
-    fetch(apiUrl("/loggers/"), {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
+    authFetch("/loggers/")
       .then(r => r.json())
-      .then((data: ImportLogger[]) => setImportLoggers(data))
-      .catch(() => setImportError("Failed to load loggers"))
-      .finally(() => setImportLoading(false))
+      .then((data: ImportLogger[]) => { setImportLoggers(data); })
+      .catch(() => { setImportError("Failed to load loggers"); })
+      .finally(() => { setImportLoading(false); })
   }
 
   const applyReader = (reader: ImportReader) => {
-    setConfigYaml(yamlDump(reader).trimEnd())
+    const yaml = yamlDump(reader).trimEnd()
+    setConfigYaml(yaml)
     setActiveTemplate("")
+    localStorage.setItem("testConnection.configYaml", yaml)
+    localStorage.setItem("testConnection.activeTemplate", "")
     importRef.current?.close()
   }
 
   const selectConfig = (configId: string) => {
     setImportLoading(true)
     setImportError(null)
-    fetch(apiUrl(`/configs/${encodeURIComponent(configId)}`), {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
+    authFetch(`/configs/${encodeURIComponent(configId)}`)
       .then(r => r.json())
       .then((d: { config_json?: string }) => {
         const parsed = JSON.parse(d.config_json ?? "{}") as Record<string, unknown>
@@ -131,53 +133,56 @@ export const TestConnectionPage = (): JSX.Element => {
           }
         }
       })
-      .catch(() => setImportError(`Failed to load config "${configId}"`))
-      .finally(() => setImportLoading(false))
+      .catch(() => { setImportError(`Failed to load config "${configId}"`); })
+      .finally(() => { setImportLoading(false); })
   }
 
   const start = useCallback(() => {
     if (!token) { appendEntry("error", "Not authenticated"); return }
 
     stoppedRef.current = false
-    const ws = new WebSocket(`${toWsBase()}/api/v1/ws/test-connection?token=${token}`)
-    wsRef.current = ws
+    setRunning(true)
 
-    ws.onopen = () => {
-      ws.send(JSON.stringify({ action: "start", config_yaml: configYaml }))
-    }
+    void freshToken().then(currentToken => {
+      if (!currentToken) { appendEntry("error", "Not authenticated"); setRunning(false); return }
+      const ws = new WebSocket(`${toWsBase()}/api/v1/ws/test-connection?token=${currentToken}`)
+      wsRef.current = ws
 
-    ws.onmessage = (event: MessageEvent) => {
-      try {
-        const msg = JSON.parse(event.data as string) as { type: string; data?: string; message?: string }
-        if (msg.type === "record") {
-          appendEntry("record", msg.data ?? "")
-        } else if (msg.type === "status") {
-          appendEntry("status", msg.message ?? "")
-          if (msg.message === "stopped") {
-            stoppedRef.current = true
+      ws.onopen = () => {
+        ws.send(JSON.stringify({ action: "start", config_yaml: configYaml }))
+      }
+
+      ws.onmessage = (event: MessageEvent) => {
+        try {
+          const msg = JSON.parse(event.data as string) as { type: string; data?: string; message?: string }
+          if (msg.type === "record") {
+            appendEntry("record", msg.data ?? "")
+          } else if (msg.type === "status") {
+            appendEntry("status", msg.message ?? "")
+            if (msg.message === "stopped") {
+              stoppedRef.current = true
+              setRunning(false)
+              wsRef.current = null
+            }
+          } else if (msg.type === "error") {
+            appendEntry("error", msg.message ?? "Unknown error")
             setRunning(false)
             wsRef.current = null
           }
-        } else if (msg.type === "error") {
-          appendEntry("error", msg.message ?? "Unknown error")
-          setRunning(false)
-          wsRef.current = null
+        } catch {
+          appendEntry("error", `Unparseable message: ${event.data as string}`)
         }
-      } catch {
-        appendEntry("error", `Unparseable message: ${event.data as string}`)
       }
-    }
 
-    ws.onerror = () => { appendEntry("error", "WebSocket error"); setRunning(false); wsRef.current = null }
+      ws.onerror = () => { appendEntry("error", "WebSocket error"); setRunning(false); wsRef.current = null }
 
-    ws.onclose = () => {
-      if (!stoppedRef.current) appendEntry("status", "Connection closed")
-      setRunning(false)
-      wsRef.current = null
-    }
-
-    setRunning(true)
-  }, [token, configYaml, appendEntry])
+      ws.onclose = () => {
+        if (!stoppedRef.current) appendEntry("status", "Connection closed")
+        setRunning(false)
+        wsRef.current = null
+      }
+    })
+  }, [token, configYaml, appendEntry, freshToken])
 
   const stop = useCallback(() => {
     wsRef.current?.send(JSON.stringify({ action: "stop" }))
@@ -189,7 +194,7 @@ export const TestConnectionPage = (): JSX.Element => {
     kind === "error" ? "text-error" : kind === "status" ? "text-info" : ""
 
   return (
-    <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-4">
+    <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-4 w-full">
       <h1 className="text-xl font-bold">Test Connection</h1>
 
       <div className="card bg-base-200 shadow-sm border border-base-300">
@@ -206,7 +211,7 @@ export const TestConnectionPage = (): JSX.Element => {
                   key={name}
                   type="button"
                   className={`btn btn-sm ${activeTemplate === name ? "btn-primary" : "btn-ghost border border-base-300"}`}
-                  onClick={() => selectTemplate(name)}
+                  onClick={() => { selectTemplate(name); }}
                   disabled={running}
                 >
                   {name}
@@ -231,7 +236,7 @@ export const TestConnectionPage = (): JSX.Element => {
             <textarea
               className="textarea textarea-bordered font-mono text-sm h-36 resize-y"
               value={configYaml}
-              onChange={e => setConfigYaml(e.target.value)}
+              onChange={e => { setConfigYaml(e.target.value); localStorage.setItem("testConnection.configYaml", e.target.value) }}
               disabled={running}
               spellCheck={false}
             />
@@ -251,7 +256,7 @@ export const TestConnectionPage = (): JSX.Element => {
             <button
               type="button"
               className="btn btn-ghost btn-sm"
-              onClick={() => setLog([])}
+              onClick={() => { setLog([]); }}
               disabled={running}
             >
               Clear log
@@ -312,7 +317,7 @@ export const TestConnectionPage = (): JSX.Element => {
                         key={configId}
                         type="button"
                         className="btn btn-xs btn-ghost border border-base-300 font-mono"
-                        onClick={() => selectConfig(configId)}
+                        onClick={() => { selectConfig(configId); }}
                       >
                         {configId}
                       </button>
@@ -329,7 +334,7 @@ export const TestConnectionPage = (): JSX.Element => {
                   key={i}
                   type="button"
                   className="btn btn-sm btn-ghost border border-base-300 w-full justify-start font-mono text-left normal-case"
-                  onClick={() => applyReader(reader)}
+                  onClick={() => { applyReader(reader); }}
                 >
                   {readerLabel(reader)}
                 </button>

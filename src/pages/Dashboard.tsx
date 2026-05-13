@@ -21,7 +21,7 @@ import type { ConfigPreview } from "../features/openrvdas/openrvdasThunks"
 import { useLoggerStateWS } from "../hooks/useLoggerStateWS"
 import { ConfigFileBrowser } from "../components/ConfigFileBrowser"
 import { LogPanel, EntryRow } from "../components/LogPanel"
-import { apiUrl } from "../utils/api"
+import { useAuthFetch } from "../hooks/useAuthFetch"
 import { dump as yamlDump } from "js-yaml"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faCircleInfo, faTriangleExclamation, faArrowUpRightFromSquare, faFileCircleExclamation, faCopy, faCheck } from "@fortawesome/free-solid-svg-icons"
@@ -57,8 +57,6 @@ export const Dashboard = (): JSX.Element => {
 
   const dialogRef = useRef<HTMLDialogElement>(null)
   const [selectedFile, setSelectedFile] = useState<string | null>(null)
-  const token = useAppSelector((state: RootState) => state.auth.token)
-
   const logHistoryRef = useRef<HTMLDialogElement>(null)
   const [logHistoryLogger, setLogHistoryLogger] = useState<string | null>(null)
   const logHistoryBottomRef = useRef<HTMLDivElement>(null)
@@ -74,6 +72,7 @@ export const Dashboard = (): JSX.Element => {
     }
   }, [logHistoryLogger, logEntries.length])
 
+  const { authFetch } = useAuthFetch()
   const configViewRef = useRef<HTMLDialogElement>(null)
   const [viewConfigId, setViewConfigId] = useState<string | null>(null)
   const [viewConfigJson, setViewConfigJson] = useState<string | null>(null)
@@ -94,7 +93,7 @@ export const Dashboard = (): JSX.Element => {
     setViewConfigLoading(true)
     setViewConfigTab("json")
     configViewRef.current?.showModal()
-    fetch(apiUrl(`/configs/${encodeURIComponent(configId)}`))
+    authFetch(`/configs/${encodeURIComponent(configId)}`)
       .then(r => r.json())
       .then((d: { config_json?: string }) => {
         try {
@@ -119,7 +118,7 @@ export const Dashboard = (): JSX.Element => {
     if (previewConfigurationThunk.fulfilled.match(result)) {
       setCruiseConfigPreview(result.payload)
     } else {
-      setCruiseConfigError((result.payload as string | undefined) ?? result.error?.message ?? "Failed to load config")
+      setCruiseConfigError((result.payload) ?? result.error.message ?? "Failed to load config")
     }
   }
 
@@ -156,7 +155,7 @@ export const Dashboard = (): JSX.Element => {
       setPreview(result.payload)
       setPreviewStep("preview")
     } else {
-      setPreviewError((result.payload as string | undefined) ?? result.error?.message ?? "Preview failed")
+      setPreviewError((result.payload) ?? result.error.message ?? "Preview failed")
     }
   }
 
@@ -180,7 +179,7 @@ export const Dashboard = (): JSX.Element => {
       }
     } else {
       setSelectedFile(cruise.config_filename)
-      setPreviewError((result.payload as string | undefined) ?? result.error?.message ?? "Preview failed")
+      setPreviewError((result.payload) ?? result.error.message ?? "Preview failed")
       setPreviewStep("select")
       void dispatch(clearLoadConfigError())
       dialogRef.current?.showModal()
@@ -383,13 +382,13 @@ export const Dashboard = (): JSX.Element => {
                 </thead>
                 <tbody>
                   {loggers.filter(l => l.id.toLowerCase().includes(loggerFilter.toLowerCase())).map(logger => {
-                    const cdsEntry = loggerStatuses[logger.id]
+                    const cdsEntry = loggerStatuses[logger.id] as (typeof loggerStatuses)[string] | undefined
                     // Only trust CDS status if it matches the currently active config,
                     // so stale data from the previous config doesn't linger after a reload.
                     const statusIsFresh =
                       logger.active_config != null &&
                       cdsEntry?.config === logger.active_config
-                    const effectiveStatus = statusIsFresh ? (cdsEntry?.status ?? null) : null
+                    const effectiveStatus = statusIsFresh ? cdsEntry.status : null
                     const badgeClass = effectiveStatus
                       ? (CDS_STATUS_BADGE[effectiveStatus] ?? "badge-ghost")
                       : (logger.running ? "badge-success" : "badge-ghost")
@@ -399,7 +398,7 @@ export const Dashboard = (): JSX.Element => {
                         <td className="font-mono text-sm">
                           <div className="flex items-center gap-1.5">
                             {(() => {
-                              const lvl = loggerLastLevel[logger.id]
+                              const lvl = loggerLastLevel[logger.id] as (typeof loggerLastLevel)[string] | undefined
                               if (!lvl || lvl.levelno < 30) return null
                               const isError = lvl.levelno >= 40
                               return (
@@ -483,9 +482,8 @@ export const Dashboard = (): JSX.Element => {
             <>
               <h3 className="font-bold text-lg mb-4">Load Configuration</h3>
               <div className="space-y-4">
-                {token && (
+                {(
                   <ConfigFileBrowser
-                    token={token}
                     selected={selectedFile}
                     onSelect={setSelectedFile}
                   />
@@ -606,8 +604,8 @@ export const Dashboard = (): JSX.Element => {
             <>
               <div className="flex items-center justify-between shrink-0 mb-2">
                 <div role="tablist" className="tabs tabs-border">
-                  <button role="tab" className={`tab ${viewConfigTab === "json" ? "tab-active" : ""}`} onClick={() => setViewConfigTab("json")}>JSON</button>
-                  <button role="tab" className={`tab ${viewConfigTab === "yaml" ? "tab-active" : ""}`} onClick={() => setViewConfigTab("yaml")}>YAML</button>
+                  <button role="tab" className={`tab ${viewConfigTab === "json" ? "tab-active" : ""}`} onClick={() => { setViewConfigTab("json"); }}>JSON</button>
+                  <button role="tab" className={`tab ${viewConfigTab === "yaml" ? "tab-active" : ""}`} onClick={() => { setViewConfigTab("yaml"); }}>YAML</button>
                 </div>
                 <button
                   className="btn btn-ghost btn-sm btn-square"
@@ -618,7 +616,7 @@ export const Dashboard = (): JSX.Element => {
                       : (() => { try { return yamlDump(JSON.parse(viewConfigJson ?? "")) } catch { return viewConfigJson ?? "" } })()
                     void navigator.clipboard.writeText(text).then(() => {
                       setViewConfigCopied(true)
-                      setTimeout(() => setViewConfigCopied(false), 2000)
+                      setTimeout(() => { setViewConfigCopied(false); }, 2000)
                     })
                   }}
                 >
@@ -681,8 +679,8 @@ export const Dashboard = (): JSX.Element => {
               )}
               <div className="flex items-center justify-between shrink-0 mb-2">
                 <div role="tablist" className="tabs tabs-border">
-                  <button role="tab" className={`tab ${cruiseConfigTab === "json" ? "tab-active" : ""}`} onClick={() => setCruiseConfigTab("json")}>JSON</button>
-                  <button role="tab" className={`tab ${cruiseConfigTab === "yaml" ? "tab-active" : ""}`} onClick={() => setCruiseConfigTab("yaml")}>YAML</button>
+                  <button role="tab" className={`tab ${cruiseConfigTab === "json" ? "tab-active" : ""}`} onClick={() => { setCruiseConfigTab("json"); }}>JSON</button>
+                  <button role="tab" className={`tab ${cruiseConfigTab === "yaml" ? "tab-active" : ""}`} onClick={() => { setCruiseConfigTab("yaml"); }}>YAML</button>
                 </div>
                 <button
                   className="btn btn-ghost btn-sm btn-square"
@@ -693,7 +691,7 @@ export const Dashboard = (): JSX.Element => {
                       : yamlDump(cruiseConfigPreview.config)
                     void navigator.clipboard.writeText(text).then(() => {
                       setCruiseConfigCopied(true)
-                      setTimeout(() => setCruiseConfigCopied(false), 2000)
+                      setTimeout(() => { setCruiseConfigCopied(false); }, 2000)
                     })
                   }}
                 >
