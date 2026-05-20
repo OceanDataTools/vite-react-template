@@ -20,6 +20,7 @@ import { LoggerStatusPage } from "./pages/LoggerStatusPage"
 import { LogsPage } from "./pages/LogsPage"
 import { RegisterForm } from "./pages/RegisterForm"
 import { ResetPasswordForm } from "./pages/ResetPasswordForm"
+import { TemplateBuilderPage } from "./pages/TemplateBuilderPage"
 import { TestConnectionPage } from "./pages/TestConnectionPage"
 import { VerifyParserPage } from "./pages/VerifyParserPage"
 import { navRoutes } from "./routes"
@@ -104,6 +105,7 @@ export const App = () => {
           </Route>
 
           <Route element={<RequireAuth />}>
+            <Route path="/advanced/template-builder" element={<TemplateBuilderPage />} />
             <Route path="/advanced/test-connection" element={<TestConnectionPage />} />
             <Route path="/advanced/verify-parser" element={<VerifyParserPage />} />
           </Route>
