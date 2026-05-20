@@ -1,5 +1,5 @@
 import type { JSX } from "react"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useAuthFetch } from "../hooks/useAuthFetch"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faCopy, faCheck } from "@fortawesome/free-solid-svg-icons"
@@ -52,8 +52,15 @@ export const VerifyParserPage = (): JSX.Element => {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<VerifyResult | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [guideOpen, setGuideOpen] = useState(false)
+  const [rawCopied, setRawCopied] = useState(false)
   const [formatCopied, setFormatCopied] = useState(false)
+
+  const guideRef = useRef<HTMLDialogElement>(null)
+  const outputRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (result) outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }, [result])
 
   const handleVerify = async () => {
     if (!rawString || !formatString) return
@@ -90,9 +97,23 @@ export const VerifyParserPage = (): JSX.Element => {
       <div className="card bg-base-200 shadow-sm border border-base-300">
         <div className="card-body py-4 px-5 space-y-4">
           <div className="form-control">
-            <label className="label">
+            <div className="flex items-center justify-between mb-1">
               <span className="label-text font-medium">Raw data string</span>
-            </label>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm btn-square"
+                title="Copy raw data string"
+                disabled={!rawString}
+                onClick={() => {
+                  void navigator.clipboard.writeText(rawString).then(() => {
+                    setRawCopied(true)
+                    setTimeout(() => { setRawCopied(false) }, 2000)
+                  })
+                }}
+              >
+                <FontAwesomeIcon icon={rawCopied ? faCheck : faCopy} className={rawCopied ? "text-success" : ""} />
+              </button>
+            </div>
             <textarea
               className="textarea textarea-bordered font-mono text-sm resize-y w-full"
               rows={3}
@@ -113,7 +134,7 @@ export const VerifyParserPage = (): JSX.Element => {
                 onClick={() => {
                   void navigator.clipboard.writeText(formatString).then(() => {
                     setFormatCopied(true)
-                    setTimeout(() => { setFormatCopied(false); }, 2000)
+                    setTimeout(() => { setFormatCopied(false) }, 2000)
                   })
                 }}
               >
@@ -134,14 +155,9 @@ export const VerifyParserPage = (): JSX.Element => {
                 ))}
               </ul>
             )}
-            <label className="label">
-              <span className="label-text-alt opacity-40 text-xs">
-                Custom types: <code>od</code> <code>of</code> <code>og</code> <code>ow</code> <code>os</code> <code>nlat</code> <code>nc</code> <code>ns</code> <code>anything</code>
-              </span>
-            </label>
           </div>
 
-          <div>
+          <div className="flex items-center">
             <button
               type="button"
               className="btn btn-primary btn-sm"
@@ -151,20 +167,22 @@ export const VerifyParserPage = (): JSX.Element => {
               {loading && <span className="loading loading-spinner loading-xs" />}
               Verify
             </button>
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm opacity-60 hover:opacity-100 px-0 ml-auto"
+              onClick={() => { guideRef.current?.showModal() }}
+            >
+              Parser type reference →
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Type reference */}
-      <div className="card bg-base-200 shadow-sm border border-base-300">
-        <div
-          className="card-body py-3 px-5 cursor-pointer select-none font-medium text-sm flex items-center justify-between"
-          onClick={() => { setGuideOpen(prev => !prev); }}
-        >
-          <span>Parser type reference</span>
-          <span className="opacity-40 text-xs">{guideOpen ? "click to collapse" : "click to expand"}</span>
-        </div>
-        {guideOpen && <div className="px-5 pb-4 space-y-4">
+      {/* Parser type reference modal */}
+      <dialog ref={guideRef} className="modal">
+        <div className="modal-box max-w-2xl space-y-5">
+          <h3 className="font-bold text-lg">Parser type reference</h3>
+
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide opacity-50 mb-2">Built-in types (parse library)</p>
             <div className="overflow-x-auto">
@@ -189,6 +207,7 @@ export const VerifyParserPage = (): JSX.Element => {
               </table>
             </div>
           </div>
+
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide opacity-50 mb-2">OpenRVDAS custom types</p>
             <div className="overflow-x-auto">
@@ -211,18 +230,26 @@ export const VerifyParserPage = (): JSX.Element => {
               </table>
             </div>
           </div>
+
           <p className="text-xs opacity-40">Usage: <code className="font-mono">{"{{FieldName:type}}"}</code> e.g. <code className="font-mono">{"{{Latitude:nlat}}"}</code> or <code className="font-mono">{"{{Speed:of}}"}</code></p>
-        </div>}
-      </div>
+
+          <div className="modal-action">
+            <form method="dialog">
+              <button className="btn btn-sm">Close</button>
+            </form>
+          </div>
+        </div>
+        <form method="dialog" className="modal-backdrop"><button>close</button></form>
+      </dialog>
 
       {error && (
-        <div role="alert" className="alert alert-error text-sm py-2">
+        <div ref={outputRef} role="alert" className="alert alert-error text-sm py-2">
           <span>{error}</span>
         </div>
       )}
 
       {result && (
-        <div className="card bg-base-200 shadow-sm border border-base-300">
+        <div ref={outputRef} className="card bg-base-200 shadow-sm border border-base-300">
           <div className="card-body py-4 px-5 space-y-4">
             {result.full_match ? (
               <div className="flex items-center gap-2 text-success font-semibold">
