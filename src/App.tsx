@@ -1,6 +1,7 @@
 import { useEffect } from "react"
 import type { JSX } from "react"
 import { useAppDispatch, useAppSelector } from "./app/hooks"
+import { AppConfig } from "./config"
 import {
   BrowserRouter,
   Navigate,
@@ -43,7 +44,6 @@ type ProtectedRouteProps = {
 }
 
 export const ProtectedRoute = ({ rolesAllowed, element }: ProtectedRouteProps): JSX.Element => {
-   
   const user = useAppSelector((state: RootState) => state.auth.user)
   const location = useLocation()
 
@@ -58,6 +58,10 @@ export const ProtectedRoute = ({ rolesAllowed, element }: ProtectedRouteProps): 
 export const App = () => {
   const dispatch = useAppDispatch()
   const token = useAppSelector((state: RootState) => state.auth.token)
+
+  useEffect(() => {
+    document.title = `${AppConfig.project} v${AppConfig.version}`
+  }, [])
 
   useEffect(() => {
     if (token) void dispatch(fetchUserProfileThunk())

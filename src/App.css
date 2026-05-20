@@ -5,6 +5,11 @@
   --sidebar-width: 15rem;
 }
 
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+}
+
 html {
   font-size: 18px;
 }
