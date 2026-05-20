@@ -10,8 +10,9 @@ import { getNavRoutes } from "../routes"
 import { useLoggerStateWS, type WSStatus } from "../hooks/useLoggerStateWS"
 
 const ADVANCED_ITEMS = [
-  { label: "Test Connection",     path: "/advanced/test-connection" },
+  { label: "Test Connection",      path: "/advanced/test-connection" },
   { label: "Verify Parser Format", path: "/advanced/verify-parser" },
+  { label: "Template Builder",     path: "/advanced/template-builder" },
 ]
 
 const WS_STATUS_STYLE: Record<WSStatus, { dot: string; label: string }> = {
