@@ -59,6 +59,12 @@ Routes are defined in `src/routes.ts` with metadata (label, `isPublic`, `require
 
 Forms use React Hook Form with Zod resolvers. Async validation (e.g., checking email availability) is done via custom validators inside the schema. See `ProfileForm.tsx` for examples of async validators and `ApiKeyModal.tsx` for modal-form patterns.
 
+### Hooks
+
+`src/hooks/` contains two general-purpose hooks:
+- `useToast` — ephemeral toast notifications
+- `useLocalStorage` — typed, JSON-serialized state persisted to localStorage (gracefully no-ops if storage is unavailable)
+
 ### Styling
 
 Custom theme colors are defined in `src/App.css` using OKLCH. Use DaisyUI utility classes (`btn`, `btn-primary`, `modal`, `navbar`, etc.) and Tailwind for layout. The default theme (`dark` or `light`) comes from `VITE_DEFAULT_THEME`.
