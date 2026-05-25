@@ -9,10 +9,10 @@ import { AppConfig } from "../config"
 import { getNavRoutes } from "../routes"
 import { useLoggerStateWS, type WSStatus } from "../hooks/useLoggerStateWS"
 
-const ADVANCED_ITEMS = [
-  { label: "Test Connection",      path: "/advanced/test-connection" },
-  { label: "Verify Parser Format", path: "/advanced/verify-parser" },
-  { label: "Template Builder",     path: "/advanced/template-builder" },
+const TOOL_ITEMS = [
+  { label: "Test Connection",      path: "/tools/test-connection" },
+  { label: "Verify Parser Format", path: "/tools/verify-parser" },
+  { label: "Template Builder",     path: "/tools/template-builder" },
 ]
 
 const WS_STATUS_STYLE: Record<WSStatus, { dot: string; label: string }> = {
@@ -100,14 +100,14 @@ export const TopNav = (): JSX.Element => {
           {user && (
             <div className="dropdown dropdown-end">
               <div tabIndex={0} role="button" className="btn btn-ghost px-2 gap-1">
-                Advanced
+                Tools
                 <FontAwesomeIcon icon={faChevronDown} size="xs" />
               </div>
               <ul
                 tabIndex={0}
                 className="dropdown-content menu bg-base-200 rounded-box shadow-md w-52 p-2 z-50"
               >
-                {ADVANCED_ITEMS.map(({ label, path }) => (
+                {TOOL_ITEMS.map(({ label, path }) => (
                   <li key={path}>
                     <button
                       onClick={() => {

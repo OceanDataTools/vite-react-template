@@ -105,9 +105,9 @@ export const App = () => {
           </Route>
 
           <Route element={<RequireAuth />}>
-            <Route path="/advanced/template-builder" element={<TemplateBuilderPage />} />
-            <Route path="/advanced/test-connection" element={<TestConnectionPage />} />
-            <Route path="/advanced/verify-parser" element={<VerifyParserPage />} />
+            <Route path="/tools/template-builder" element={<TemplateBuilderPage />} />
+            <Route path="/tools/test-connection" element={<TestConnectionPage />} />
+            <Route path="/tools/verify-parser" element={<VerifyParserPage />} />
           </Route>
 
           <Route path="/" element={<Home />} />
