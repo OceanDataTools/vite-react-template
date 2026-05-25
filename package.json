@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "tsc -b && vite build",
+    "build": "tsc --noEmit -p tsconfig.app.json && vite build",
     "dev": "vite",
     "format:check": "prettier --check .",
     "format": "prettier --write .",
@@ -14,7 +14,7 @@
     "preview": "vite preview",
     "start": "vite",
     "test": "vitest --run",
-    "type-check": "tsc -b --noEmit"
+    "type-check": "tsc --noEmit -p tsconfig.app.json"
   },
   "dependencies": {
     "@fortawesome/free-brands-svg-icons": "^7.0.0",
