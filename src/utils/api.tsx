@@ -3,7 +3,8 @@ import { refreshTokenThunk, logoutThunk } from "../features/auth/authThunks"
 import { AppConfig } from "../config"
 
 export function apiUrl(path: string): string {
-  return `${AppConfig.apiBaseUrl}/api/v1${path.startsWith("/") ? path : `/${path}`}`
+  const base = AppConfig.apiBaseUrl || window.location.origin
+  return `${base}/api/v1${path.startsWith("/") ? path : `/${path}`}`
 }
 
 export async function fetchWithAuth(
