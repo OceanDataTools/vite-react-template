@@ -10,7 +10,7 @@ type FileEntry = {
 
 type Props = {
   selected: string | null
-  onSelect: (absPath: string) => void
+  onSelect: (relPath: string) => void
 }
 
 export function ConfigFileBrowser({ selected, onSelect }: Props) {
@@ -84,11 +84,11 @@ export function ConfigFileBrowser({ selected, onSelect }: Props) {
                 ) : (
                   <button
                     className={`w-full text-left px-3 py-2 flex items-center gap-2 text-sm font-mono transition-colors ${
-                      selected === entry.abs_path
+                      selected === entry.rel_path
                         ? "bg-primary/15 text-primary"
                         : "hover:bg-base-200"
                     }`}
-                    onClick={() => { if (entry.abs_path) onSelect(entry.abs_path) }}
+                    onClick={() => { onSelect(entry.rel_path) }}
                   >
                     <span className="opacity-40 text-xs">—</span>
                     {entry.name}
