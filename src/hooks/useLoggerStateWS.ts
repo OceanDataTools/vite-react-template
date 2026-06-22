@@ -15,7 +15,8 @@ import { setLoggerStatuses, addLogEntries, clearLogEntries, type LoggerStatus, t
 export type WSStatus = "connected" | "degraded" | "connecting" | "disconnected"
 
 function wsBaseUrl(): string {
-  return AppConfig.apiBaseUrl.replace(/^http/, "ws")
+  const base = AppConfig.apiBaseUrl || window.location.origin
+  return base.replace(/^http/, "ws")
 }
 
 export function useLoggerStateWS(): WSStatus {
