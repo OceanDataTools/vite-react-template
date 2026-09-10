@@ -1,5 +1,4 @@
 import { z } from "zod"
-import packageJson from "../package.json" with { type: "json" }
 import defaultLogo from "./assets/nautilus.svg"
 
 const BREAKPOINT_PX = { sm: 640, md: 768, lg: 1024, xl: 1280, "2xl": 1536 } as const
@@ -10,7 +9,6 @@ const EnvSchema = z.object({
   VITE_ALLOW_SELF_REGISTER: z.enum(["true", "false"]).default("true"),
   VITE_PROJECT: z.string().default("OpenRVDAS"),
   VITE_LOGO: z.string().default(""),
-  VITE_OPENRVDAS_VERSION: z.string().default(packageJson.version),
   VITE_LAYOUT: z.enum(["topnav", "drawer"]).default("topnav"),
   VITE_DRAWER_BREAKPOINT: z.enum(["sm", "md", "lg", "xl", "2xl"]).default("xl"),
   VITE_DRAWER_COLLAPSIBLE: z.enum(["true", "false"]).default("true"),
@@ -24,7 +22,6 @@ export const AppConfig = {
   allowSelfRegister: parsed.VITE_ALLOW_SELF_REGISTER === "true",
   project: parsed.VITE_PROJECT,
   logo: parsed.VITE_LOGO || defaultLogo,
-  version: parsed.VITE_OPENRVDAS_VERSION,
   layout: parsed.VITE_LAYOUT,
   drawerBreakpoint: BREAKPOINT_PX[parsed.VITE_DRAWER_BREAKPOINT],
   drawerCollapsible: parsed.VITE_DRAWER_COLLAPSIBLE === "true",

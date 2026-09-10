@@ -1,8 +1,6 @@
 /// <reference types="vite/client" />
 
-type ImportMetaEnv = {
-  readonly VITE_OPENRVDAS_VERSION: string
-}
+type ImportMetaEnv = object
 
 type ImportMeta = {
   readonly env: ImportMetaEnv
