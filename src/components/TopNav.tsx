@@ -8,6 +8,7 @@ import type { RootState } from "../app/store"
 import { AppConfig } from "../config"
 import { getNavRoutes } from "../routes"
 import { useLoggerStateWS, type WSStatus } from "../hooks/useLoggerStateWS"
+import { useAppVersion } from "../hooks/useAppVersion"
 
 const TOOL_ITEMS = [
   { label: "Test Connection",      path: "/tools/test-connection" },
@@ -27,6 +28,7 @@ export const TopNav = (): JSX.Element => {
   const dispatch = useAppDispatch()
   const { user } = useAppSelector((state: RootState) => state.auth)
   const wsStatus = useLoggerStateWS()
+  const version = useAppVersion()
   const hideNavPaths = ["/login"]
 
   const navigate = useNavigate()
@@ -67,9 +69,9 @@ export const TopNav = (): JSX.Element => {
               fill="currentColor"
             >
               {AppConfig.project}
-              {AppConfig.version && (
+              {version && (
                 <tspan fontSize="13" fontWeight="normal" opacity="0.5" dx="8">
-                  v{AppConfig.version}
+                  v{version}
                 </tspan>
               )}
             </text>

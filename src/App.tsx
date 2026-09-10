@@ -12,6 +12,7 @@ import {
 } from "react-router-dom"
 import type { RootState } from "./app/store"
 import { fetchUserProfileThunk } from "./features/auth/authThunks"
+import { useAppVersion } from "./hooks/useAppVersion"
 import MainLayout from "./components/MainLayout"
 import { ForgotPasswordForm } from "./pages/ForgotPasswordForm"
 import { Home } from "./pages/Home"
@@ -63,10 +64,11 @@ export const ProtectedRoute = ({ rolesAllowed, element }: ProtectedRouteProps): 
 export const App = () => {
   const dispatch = useAppDispatch()
   const token = useAppSelector((state: RootState) => state.auth.token)
+  const version = useAppVersion()
 
   useEffect(() => {
-    document.title = `${AppConfig.project} v${AppConfig.version}`
-  }, [])
+    document.title = version ? `${AppConfig.project} v${version}` : AppConfig.project
+  }, [version])
 
   useEffect(() => {
     if (token) void dispatch(fetchUserProfileThunk())
