@@ -96,7 +96,7 @@ export const TopNav = (): JSX.Element => {
                 <hr className="border-base-300" />
                 <ul className="menu w-full p-2">
                   {dropdownLinks.map(({ label, path }) => (
-                    <li key={`vislink_${String(label)}`}>
+                    <li key={`vislink_${label}`}>
                       <NavLink
                         onClick={() => { (document.activeElement as HTMLElement | null)?.blur(); }}
                         to={path}

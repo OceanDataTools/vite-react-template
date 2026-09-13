@@ -1,15 +1,15 @@
 import js from "@eslint/js"
+import { defineConfig, globalIgnores } from "eslint/config"
 import vitestPlugin from "@vitest/eslint-plugin"
 import prettierConfig from "eslint-config-prettier/flat"
 import reactPlugin from "eslint-plugin-react"
 import reactHooksPlugin from "eslint-plugin-react-hooks"
 import globals from "globals"
-import { config, configs } from "typescript-eslint"
+import { configs } from "typescript-eslint"
 
-const eslintConfig = config(
-  {
-    name: "global-ignores",
-    ignores: [
+const eslintConfig = defineConfig(
+  globalIgnores(
+    [
       "**/*.snap",
       "**/dist/",
       "**/.yalc/",
@@ -21,7 +21,8 @@ const eslintConfig = config(
       "**/coverage/",
       "**/.husky/**",
     ],
-  },
+    "global-ignores",
+  ),
   {
     name: `${js.meta.name}/recommended`,
     ...js.configs.recommended,
