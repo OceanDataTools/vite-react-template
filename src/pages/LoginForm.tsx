@@ -14,7 +14,7 @@ export const LoginForm = (): JSX.Element => {
   const navigate = useNavigate()
   const { loading } = useAppSelector(state => state.auth)
 
-  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!username || !password) return
     setError(null)
