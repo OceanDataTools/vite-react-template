@@ -106,5 +106,6 @@ Issue branches are named `issue_NNN`, where `NNN` is the GitHub issue number zer
 - Never push issue work directly to `dev`, `<project>_dev`, `main`, or `<project>`.
 - All PRs are merged through the GitHub UI (not `git merge`/`gh pr merge` from the CLI).
 - When `main` gets a new release, open issues to rebase each `<project>` branch and its `<project>_dev` branch against the updated `main`, so projects stay current with base improvements.
+- `package-lock.json` is a poor git-merge candidate: git's text-level merge can combine two independently-valid lockfile diffs into a result that's syntactically valid JSON but out of sync with `package.json` (this happened once — see #17). If two open PRs both touch `package-lock.json`, don't merge them back-to-back — after merging the first, rebase the second onto `dev` and re-run `npm install` before merging it.
 
 See `RELEASING.md` for the step-by-step procedure to cut a release of `main` (version bump, tag, GitHub Release).
