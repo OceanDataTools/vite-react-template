@@ -37,7 +37,7 @@ export const SideBar = (): JSX.Element => {
         {/* Nav links */}
         <ul className="menu bg-base-200 text-base-content flex-1 overflow-y-auto w-full p-4">
           {visibleLinks.map(({ label, path }) => (
-            <li key={`vislink_${String(label)}`}>
+            <li key={`vislink_${label}`}>
               <NavLink
                 onClick={() => { (document.activeElement as HTMLElement | null)?.blur(); }}
                 to={path}
