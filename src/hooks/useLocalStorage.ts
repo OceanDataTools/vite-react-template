@@ -1,4 +1,4 @@
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 
 export function useLocalStorage<T>(key: string, defaultValue: T): [T, (v: T | ((prev: T) => T)) => void] {
   const [value, setValueState] = useState<T>(() => {
@@ -11,7 +11,9 @@ export function useLocalStorage<T>(key: string, defaultValue: T): [T, (v: T | ((
   })
 
   const valueRef = useRef(value)
-  valueRef.current = value
+  useEffect(() => {
+    valueRef.current = value
+  }, [value])
 
   const set = (v: T | ((prev: T) => T)) => {
     const newValue = typeof v === "function" ? (v as (prev: T) => T)(valueRef.current) : v
