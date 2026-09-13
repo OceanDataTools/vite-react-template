@@ -92,9 +92,14 @@ main
          └─ issue_<n>              — project-specific work → PR → <project>_dev
 ```
 
-- **Base/template improvements** (generic, reusable): cut an `issue_<number>` branch from `dev`, PR into `dev`.
-- **Project-specific work** (e.g. OpenRVDAS features): cut an `issue_<number>` branch from `openrvdas_dev`, PR into `openrvdas_dev`.
+Issue branches are named `issue_NNN`, where `NNN` is the GitHub issue number zero-padded to 3 digits (e.g. issue #7 → `issue_007`, issue #42 → `issue_042`, issue #123 → `issue_123`).
+
+- **Base/template improvements** (generic, reusable): cut an `issue_NNN` branch from `dev`, PR into `dev`.
+- **Project-specific work** (e.g. OpenRVDAS features): cut an `issue_NNN` branch from `openrvdas_dev`, PR into `openrvdas_dev`.
 - `openrvdas_dev` merges into `openrvdas` via PR the same way `dev` merges into `main`.
 - Never push issue work directly to `dev`, `openrvdas_dev`, `main`, or `openrvdas`.
 - All PRs are merged through the GitHub UI (not `git merge`/`gh pr merge` from the CLI).
 - When `main` gets a new release, open issues to rebase `openrvdas` and `openrvdas_dev` against the updated `main`, so this project stays current with base improvements.
+- `package-lock.json` is a poor git-merge candidate: git's text-level merge can combine two independently-valid lockfile diffs into a result that's syntactically valid JSON but out of sync with `package.json` (this happened once on `dev` — see vite-react-template#17). If two open PRs both touch `package-lock.json`, don't merge them back-to-back — after merging the first, rebase the second onto its target branch and re-run `npm install` before merging it.
+
+See `RELEASING.md` for the step-by-step procedure to cut a release of `main` (version bump, tag, GitHub Release).
