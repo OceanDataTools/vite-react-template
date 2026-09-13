@@ -85,7 +85,7 @@ Husky runs `lint:fix` and `format` automatically on every commit. Don't skip it.
 
 ## Branching & PR Workflow
 
-This repo is a shared boilerplate/template (`main`) that individual UI projects (e.g. `openrvdas`) branch off of. There are two parallel tracks, mirrored in both `frontend` and `backend`:
+This repo is a shared boilerplate/template (`main`) that individual UI projects (e.g. `openrvdas`, this branch) branch off of. There are two parallel tracks, mirrored in both `frontend` and `backend`:
 
 ```
 main                              — shared template baseline
@@ -101,12 +101,12 @@ main
 Issue branches are named `issue_NNN`, where `NNN` is the GitHub issue number zero-padded to 3 digits (e.g. issue #7 → `issue_007`, issue #42 → `issue_042`, issue #123 → `issue_123`).
 
 - **Base/template improvements** (generic, reusable): cut an `issue_NNN` branch from `dev`, PR into `dev`.
-- **Project-specific work** (e.g. OpenRVDAS features): cut an `issue_NNN` branch from `<project>_dev` (e.g. `openrvdas_dev`), PR into `<project>_dev`.
-- `<project>_dev` merges into `<project>` via PR the same way `dev` merges into `main`.
-- Never push issue work directly to `dev`, `<project>_dev`, `main`, or `<project>`.
+- **Project-specific work** (e.g. OpenRVDAS features): cut an `issue_NNN` branch from `openrvdas_dev`, PR into `openrvdas_dev`.
+- `openrvdas_dev` merges into `openrvdas` via PR the same way `dev` merges into `main`.
+- Never push issue work directly to `dev`, `openrvdas_dev`, `main`, or `openrvdas`.
 - All PRs are merged through the GitHub UI (not `git merge`/`gh pr merge` from the CLI).
-- Close the linked issue as soon as its PR merges into `dev`/`<project>_dev` — don't wait for the change to reach `main`. GitHub's own `Closes #N` auto-close only fires once the commit lands on the default branch (`main`), and even then isn't fully reliable, so close manually at dev-merge time by default. Exception: leave it open if the issue or PR explicitly says not to close it yet (e.g. it tracks more than just that one PR).
-- When `main` gets a new release, open issues to rebase each `<project>` branch and its `<project>_dev` branch against the updated `main`, so projects stay current with base improvements.
-- `package-lock.json` is a poor git-merge candidate: git's text-level merge can combine two independently-valid lockfile diffs into a result that's syntactically valid JSON but out of sync with `package.json` (this happened once — see #17). If two open PRs both touch `package-lock.json`, don't merge them back-to-back — after merging the first, rebase the second onto `dev` and re-run `npm install` before merging it.
+- Close the linked issue as soon as its PR merges into `openrvdas_dev` — don't wait for the change to reach `openrvdas`. GitHub's own `Closes #N` auto-close only fires once the commit lands on the default branch (`main`), which project work never reaches, so close manually at `openrvdas_dev`-merge time. Exception: leave it open if the issue or PR explicitly says not to close it yet (e.g. it tracks more than just that one PR).
+- When `main` gets a new release, open issues to rebase `openrvdas` and `openrvdas_dev` against the updated `main`, so this project stays current with base improvements.
+- `package-lock.json` is a poor git-merge candidate: git's text-level merge can combine two independently-valid lockfile diffs into a result that's syntactically valid JSON but out of sync with `package.json` (this happened once on `dev` — see vite-react-template#17). If two open PRs both touch `package-lock.json`, don't merge them back-to-back — after merging the first, rebase the second onto its target branch and re-run `npm install` before merging it.
 
 See `RELEASING.md` for the step-by-step procedure to cut a release of `main` (version bump, tag, GitHub Release).
