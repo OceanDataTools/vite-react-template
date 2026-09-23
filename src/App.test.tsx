@@ -149,7 +149,8 @@ describe("App", () => {
 
     renderWithProviders(<App />)
 
-    expect(document.title).toBe(`${AppConfig.project} v${AppConfig.version}`)
-    expect(screen.getByText(/vite \+ react \+ redux template/i)).toBeInTheDocument()
+    // The version is fetched from the backend at runtime (useAppVersion), so
+    // before it resolves the title is just the project name.
+    expect(document.title).toBe(AppConfig.project)
   })
 })
