@@ -23,13 +23,15 @@ export function useDataServerSocket() {
 
   useEffect(() => {
     if (!token) return
+    // Narrowed copy: TS doesn't carry the null check into the connect() closure.
+    const authToken = token
 
     alive.current = true
 
     function connect() {
       if (!alive.current) return
 
-      const url = `${toWsUrl(AppConfig.apiBaseUrl)}/api/v1/ws/data-server?token=${token}`
+      const url = `${toWsUrl(AppConfig.apiBaseUrl)}/api/v1/ws/data-server?token=${authToken}`
       dispatch(setWsStatus("connecting"))
 
       const ws = new WebSocket(url)
@@ -69,7 +71,7 @@ export function useDataServerSocket() {
         }
 
         if (m.type === "data" && m.status === 200 && m.data && typeof m.data === "object") {
-          const data = m.data as Record<string, [number, unknown][]>
+          const data = m.data as Partial<Record<string, [number, unknown][]>>
 
           const loggerStatus = data["status:logger_status"]
           if (loggerStatus?.length) {
