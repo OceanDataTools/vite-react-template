@@ -17,12 +17,19 @@ export function ConfigFileBrowser({ selected, onSelect }: Props) {
   const { authFetch } = useAuthFetch()
   const [path, setPath] = useState("")
   const [entries, setEntries] = useState<FileEntry[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
+  // Reset loading/error here rather than in the effect (react-hooks/set-state-in-effect).
+  // Same-path clicks are ignored: the effect wouldn't re-run to clear `loading`.
+  const navigate = (next: string) => {
+    if (next === path) return
     setLoading(true)
     setError(null)
+    setPath(next)
+  }
+
+  useEffect(() => {
     authFetch(`/configuration/files?path=${encodeURIComponent(path)}`)
       .then(res =>
         res.ok
@@ -43,7 +50,7 @@ export function ConfigFileBrowser({ selected, onSelect }: Props) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-1 text-xs font-mono flex-wrap opacity-70">
-        <button className="hover:opacity-100 hover:underline" onClick={() => { setPath(""); }}>
+        <button className="hover:opacity-100 hover:underline" onClick={() => { navigate(""); }}>
           /
         </button>
         {segments.map((seg, i) => (
@@ -51,7 +58,7 @@ export function ConfigFileBrowser({ selected, onSelect }: Props) {
             {i > 0 && <span>/</span>}
             <button
               className="hover:opacity-100 hover:underline"
-              onClick={() => { setPath(segments.slice(0, i + 1).join("/")); }}
+              onClick={() => { navigate(segments.slice(0, i + 1).join("/")); }}
             >
               {seg}
             </button>
@@ -75,7 +82,7 @@ export function ConfigFileBrowser({ selected, onSelect }: Props) {
                 {entry.type === "dir" ? (
                   <button
                     className="w-full text-left px-3 py-2 hover:bg-base-200 flex items-center gap-2 text-sm font-mono"
-                    onClick={() => { setPath(entry.rel_path); }}
+                    onClick={() => { navigate(entry.rel_path); }}
                   >
                     <span className="opacity-40 text-xs">▶</span>
                     {entry.name}
