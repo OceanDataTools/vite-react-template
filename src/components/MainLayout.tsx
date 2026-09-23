@@ -7,28 +7,25 @@ import { SideBar } from "./SideBar"
 import { Footer } from "./Footer"
 import { AppConfig } from "../config"
 
+const computeIsWideScreen = () => window.innerWidth >= AppConfig.drawerBreakpoint
+
 const MainLayout = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(!AppConfig.drawerCollapsible)
-  const [isWideScreen, setIsWideScreen] = useState(false)
+  const [isWideScreen, setIsWideScreen] = useState(computeIsWideScreen)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    if (!AppConfig.drawerCollapsible) return true
+    if (computeIsWideScreen()) return true
+    return localStorage.getItem("drawerOpen") === "true"
+  })
 
   useEffect(() => {
     const bp = AppConfig.drawerBreakpoint
 
-    const update = (wide: boolean) => {
+    const handleResize = () => {
+      const wide = window.innerWidth >= bp
       setIsWideScreen(wide)
       if (AppConfig.drawerCollapsible) setIsSidebarOpen(wide)
     }
 
-    if (window.innerWidth >= bp) {
-      update(true)
-    } else {
-      update(false)
-      if (AppConfig.drawerCollapsible) {
-        setIsSidebarOpen(localStorage.getItem("drawerOpen") === "true")
-      }
-    }
-
-    const handleResize = () => { update(window.innerWidth >= bp); }
     window.addEventListener("resize", handleResize)
     return () => { window.removeEventListener("resize", handleResize); }
   }, [])

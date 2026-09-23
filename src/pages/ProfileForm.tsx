@@ -1,6 +1,6 @@
 // src/pages/ProfileForm.tsx
 import type { JSX } from "react"
-import { useEffect, useMemo, useRef } from "react"
+import { useEffect, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -27,8 +27,8 @@ const ProfileForm = (): JSX.Element => {
   const loading = useAppSelector((state: RootState) => state.auth.loading)
   const { toast, setToast } = useToast()
 
-  // Ref to store original email
-  const originalEmail = useRef(user?.email ?? "")
+  // Original email, to skip re-validating availability when unchanged
+  const originalEmail = user?.email ?? ""
 
   const defaultValues = useMemo(
     () => ({
@@ -50,7 +50,7 @@ const ProfileForm = (): JSX.Element => {
       email: z
         .email("Valid email address is required")
         .superRefine(async (val, ctx) => {
-          if (val === originalEmail.current) return
+          if (val === originalEmail) return
 
           try {
             const json = await checkEmailAvailability(val)
@@ -119,11 +119,9 @@ const ProfileForm = (): JSX.Element => {
     mode: "onChange",
   })
 
-  // Update form when user changes, and store new originalEmail
+  // Update form when user changes
   useEffect(() => {
-     
     if (user) {
-      originalEmail.current = user.email
       reset(
         {
           username: user.username,

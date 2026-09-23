@@ -1,154 +1,155 @@
-import { act, screen } from "@testing-library/react"
-import { App } from "./App"
+import { screen } from "@testing-library/react"
+import { MemoryRouter, Route, Routes } from "react-router-dom"
+import { App, ProtectedRoute, RequireAuth, RequireUnAuth } from "./App"
+import { AppConfig } from "./config"
 import { renderWithProviders } from "./utils/test-utils"
+import type { RootState } from "./app/store"
 
-test("App should have correct initial render", () => {
-  renderWithProviders(<App />)
-
-  const countLabel = screen.getByLabelText<HTMLLabelElement>("Count")
-
-  const incrementValueInput = screen.getByLabelText<HTMLInputElement>(
-    "Set increment amount",
-  )
-
-  // The app should be rendered correctly
-  expect(screen.getByText(/learn/i)).toBeInTheDocument()
-
-  // Initial state: count should be 0, incrementValue should be 2
-  expect(countLabel).toHaveTextContent("0")
-  expect(incrementValueInput).toHaveValue(2)
+const authState = (
+  overrides: { token?: string | null; roles?: string[] } = {},
+): Partial<RootState> => ({
+  auth: {
+    token: overrides.token ?? null,
+    user: overrides.token
+      ? {
+          username: "test",
+          full_name: "Test User",
+          email: "test@example.com",
+          roles: overrides.roles ?? [],
+        }
+      : null,
+    loading: false,
+    error: null,
+  },
 })
 
-test("Increment value and Decrement value should work as expected", async () => {
-  const { user } = renderWithProviders(<App />)
+describe("RequireAuth", () => {
+  test("redirects to /login when there is no token", () => {
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/protected"]}>
+        <Routes>
+          <Route element={<RequireAuth />}>
+            <Route path="/protected" element={<div>Protected content</div>} />
+          </Route>
+          <Route path="/login" element={<div>Login page</div>} />
+        </Routes>
+      </MemoryRouter>,
+      { preloadedState: authState() },
+    )
 
-  const countLabel = screen.getByLabelText<HTMLLabelElement>("Count")
-
-  const incrementValueButton =
-    screen.getByLabelText<HTMLButtonElement>("Increment value")
-
-  const decrementValueButton =
-    screen.getByLabelText<HTMLButtonElement>("Decrement value")
-
-  // Click on "+" => Count should be 1
-  await user.click(incrementValueButton)
-  expect(countLabel).toHaveTextContent("1")
-
-  // Click on "-" => Count should be 0
-  await user.click(decrementValueButton)
-  expect(countLabel).toHaveTextContent("0")
-})
-
-test("Add Amount should work as expected", async () => {
-  const { user } = renderWithProviders(<App />)
-
-  const countLabel = screen.getByLabelText<HTMLLabelElement>("Count")
-
-  const incrementValueInput = screen.getByLabelText<HTMLInputElement>(
-    "Set increment amount",
-  )
-
-  const addAmountButton = screen.getByText<HTMLButtonElement>("Add Amount")
-
-  // "Add Amount" button is clicked => Count should be 2
-  await user.click(addAmountButton)
-  expect(countLabel).toHaveTextContent("2")
-
-  // incrementValue is 2, click on "Add Amount" => Count should be 4
-  await user.clear(incrementValueInput)
-  await user.type(incrementValueInput, "2")
-  await user.click(addAmountButton)
-  expect(countLabel).toHaveTextContent("4")
-
-  // [Negative number] incrementValue is -1, click on "Add Amount" => Count should be 3
-  await user.clear(incrementValueInput)
-  await user.type(incrementValueInput, "-1")
-  await user.click(addAmountButton)
-  expect(countLabel).toHaveTextContent("3")
-})
-
-it("Add Async should work as expected", async () => {
-  vi.useFakeTimers({ shouldAdvanceTime: true })
-
-  const { user } = renderWithProviders(<App />)
-
-  const addAsyncButton = screen.getByText<HTMLButtonElement>("Add Async")
-
-  const countLabel = screen.getByLabelText<HTMLLabelElement>("Count")
-
-  const incrementValueInput = screen.getByLabelText<HTMLInputElement>(
-    "Set increment amount",
-  )
-
-  await user.click(addAsyncButton)
-
-  await act(async () => {
-    await vi.advanceTimersByTimeAsync(500)
+    expect(screen.getByText("Login page")).toBeInTheDocument()
+    expect(screen.queryByText("Protected content")).not.toBeInTheDocument()
   })
 
-  // "Add Async" button is clicked => Count should be 2
-  expect(countLabel).toHaveTextContent("2")
+  test("renders the outlet when a token is present", () => {
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/protected"]}>
+        <Routes>
+          <Route element={<RequireAuth />}>
+            <Route path="/protected" element={<div>Protected content</div>} />
+          </Route>
+          <Route path="/login" element={<div>Login page</div>} />
+        </Routes>
+      </MemoryRouter>,
+      { preloadedState: authState({ token: "test-token" }) },
+    )
 
-  await user.clear(incrementValueInput)
-  await user.type(incrementValueInput, "2")
-
-  await user.click(addAsyncButton)
-  await act(async () => {
-    await vi.advanceTimersByTimeAsync(500)
+    expect(screen.getByText("Protected content")).toBeInTheDocument()
   })
-
-  // incrementValue is 2, click on "Add Async" => Count should be 4
-  expect(countLabel).toHaveTextContent("4")
-
-  await user.clear(incrementValueInput)
-  await user.type(incrementValueInput, "-1")
-  await user.click(addAsyncButton)
-
-  await act(async () => {
-    await vi.advanceTimersByTimeAsync(500)
-  })
-
-  // [Negative number] incrementValue is -1, click on "Add Async" => Count should be 3
-  expect(countLabel).toHaveTextContent("3")
-
-  vi.useRealTimers()
 })
 
-test("Add If Odd should work as expected", async () => {
-  const { user } = renderWithProviders(<App />)
+describe("RequireUnAuth", () => {
+  test("redirects to / when a token is present", () => {
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/login"]}>
+        <Routes>
+          <Route element={<RequireUnAuth />}>
+            <Route path="/login" element={<div>Login page</div>} />
+          </Route>
+          <Route path="/" element={<div>Home page</div>} />
+        </Routes>
+      </MemoryRouter>,
+      { preloadedState: authState({ token: "test-token" }) },
+    )
 
-  const countLabel = screen.getByLabelText<HTMLLabelElement>("Count")
+    expect(screen.getByText("Home page")).toBeInTheDocument()
+    expect(screen.queryByText("Login page")).not.toBeInTheDocument()
+  })
 
-  const addIfOddButton = screen.getByText<HTMLButtonElement>("Add If Odd")
+  test("renders the outlet when there is no token", () => {
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/login"]}>
+        <Routes>
+          <Route element={<RequireUnAuth />}>
+            <Route path="/login" element={<div>Login page</div>} />
+          </Route>
+          <Route path="/" element={<div>Home page</div>} />
+        </Routes>
+      </MemoryRouter>,
+      { preloadedState: authState() },
+    )
 
-  const incrementValueInput = screen.getByLabelText<HTMLInputElement>(
-    "Set increment amount",
-  )
+    expect(screen.getByText("Login page")).toBeInTheDocument()
+  })
+})
 
-  const incrementValueButton =
-    screen.getByLabelText<HTMLButtonElement>("Increment value")
+describe("ProtectedRoute", () => {
+  test("renders the element when the user has a required role", () => {
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/admin"]}>
+        <Routes>
+          <Route
+            path="/admin"
+            element={<ProtectedRoute rolesAllowed={["admin"]} element={<div>Admin content</div>} />}
+          />
+          <Route path="/" element={<div>Home page</div>} />
+        </Routes>
+      </MemoryRouter>,
+      { preloadedState: authState({ token: "test-token", roles: ["admin"] }) },
+    )
 
-  // "Add If Odd" button is clicked => Count should stay 0
-  await user.click(addIfOddButton)
-  expect(countLabel).toHaveTextContent("0")
+    expect(screen.getByText("Admin content")).toBeInTheDocument()
+  })
 
-  // Click on "+" => Count should be updated to 1
-  await user.click(incrementValueButton)
-  expect(countLabel).toHaveTextContent("1")
+  test("redirects to / when the user lacks the required role", () => {
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/admin"]}>
+        <Routes>
+          <Route
+            path="/admin"
+            element={<ProtectedRoute rolesAllowed={["admin"]} element={<div>Admin content</div>} />}
+          />
+          <Route path="/" element={<div>Home page</div>} />
+        </Routes>
+      </MemoryRouter>,
+      { preloadedState: authState({ token: "test-token", roles: ["viewer"] }) },
+    )
 
-  // "Add If Odd" button is clicked => Count should be updated to 3
-  await user.click(addIfOddButton)
-  expect(countLabel).toHaveTextContent("3")
+    expect(screen.getByText("Home page")).toBeInTheDocument()
+    expect(screen.queryByText("Admin content")).not.toBeInTheDocument()
+  })
 
-  // incrementValue is 1, click on "Add If Odd" => Count should be updated to 4
-  await user.clear(incrementValueInput)
-  await user.type(incrementValueInput, "1")
-  await user.click(addIfOddButton)
-  expect(countLabel).toHaveTextContent("4")
+  test("renders the element when no roles are required", () => {
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/apikeys"]}>
+        <Routes>
+          <Route path="/apikeys" element={<ProtectedRoute element={<div>API keys</div>} />} />
+        </Routes>
+      </MemoryRouter>,
+      { preloadedState: authState({ token: "test-token" }) },
+    )
 
-  // click on "Add If Odd" => Count should stay 4
-  await user.clear(incrementValueInput)
-  await user.type(incrementValueInput, "-1")
-  await user.click(addIfOddButton)
-  expect(countLabel).toHaveTextContent("4")
+    expect(screen.getByText("API keys")).toBeInTheDocument()
+  })
+})
+
+describe("App", () => {
+  test("renders without crashing and sets the document title", () => {
+    window.history.pushState({}, "", "/")
+
+    renderWithProviders(<App />)
+
+    expect(document.title).toBe(`${AppConfig.project} v${AppConfig.version}`)
+    expect(screen.getByText(/vite \+ react \+ redux template/i)).toBeInTheDocument()
+  })
 })
