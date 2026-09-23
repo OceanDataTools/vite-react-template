@@ -16,9 +16,15 @@ This repo follows [SemVer](https://semver.org/) (`MAJOR.MINOR.PATCH`):
 
 ## Steps
 
-1. Confirm CI is green on `dev`.
-2. Open a PR from `dev` into `main` via the GitHub UI, titled `Release vX.Y.Z`.
-3. As part of that PR, bump the `version` field in `package.json` to `X.Y.Z`.
+1. Open an issue for the version bump and cut an `issue_NNN` branch from `dev`. On that branch, bump the version (this updates both `package.json` and `package-lock.json` without creating a commit or tag):
+
+   ```bash
+   npm version X.Y.Z --no-git-tag-version
+   ```
+
+   Commit, PR into `dev`, and merge via the GitHub UI. (The bump can't go in the release PR itself — that PR's source branch is `dev`, and nothing is pushed directly to `dev`.)
+2. Confirm CI is green on `dev`.
+3. Open a PR from `dev` into `main` via the GitHub UI, titled `Release vX.Y.Z`.
 4. Get the PR reviewed and merge it into `main` via the GitHub UI.
 5. On the resulting `main` commit, create and push an annotated tag:
 
