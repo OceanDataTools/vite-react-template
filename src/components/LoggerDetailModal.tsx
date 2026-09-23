@@ -32,9 +32,10 @@ export function LoggerDetailModal({ loggerId, onClose }: Props): JSX.Element {
   const loggerStatuses = useAppSelector((s: RootState) => s.openrvdas.loggerStatuses)
   const logEntries     = useAppSelector((s: RootState) => s.openrvdas.logEntries)
 
-  const [configJson, setConfigJson]     = useState<string | null>(null)
-  const [configLoading, setConfigLoading] = useState(false)
-  const [configCopied, setConfigCopied]   = useState(false)
+  // Fetch results and the copied flag are keyed by what they belong to, so a
+  // stale value is ignored during render instead of being reset in an effect.
+  const [fetchedConfig, setFetchedConfig] = useState<{ key: string; json: string } | null>(null)
+  const [copiedFor, setCopiedFor]         = useState<string | null>(null)
 
   const { authFetch } = useAuthFetch()
 
@@ -42,7 +43,11 @@ export function LoggerDetailModal({ loggerId, onClose }: Props): JSX.Element {
   useEffect(() => {
     const dialog = dialogRef.current
     if (!dialog) return
-    const handler = () => { onCloseRef.current() }
+    const handler = () => {
+      // Drop the cached config so reopening the same logger fetches it fresh.
+      setFetchedConfig(null)
+      onCloseRef.current()
+    }
     dialog.addEventListener("close", handler)
     return () => { dialog.removeEventListener("close", handler) }
   }, [])
@@ -56,20 +61,26 @@ export function LoggerDetailModal({ loggerId, onClose }: Props): JSX.Element {
     }
   }, [loggerId])
 
-  // Fetch config whenever the selected logger changes.
+  const activeConfig = loggerId
+    ? (loggers.find(l => l.id === loggerId)?.active_config ?? null)
+    : null
+  const configKey = loggerId && activeConfig ? JSON.stringify([loggerId, activeConfig]) : null
+
+  // Fetch config whenever the selected logger or its active config changes.
   useEffect(() => {
-    if (!loggerId) return
-    const activeConfig = loggers.find(l => l.id === loggerId)?.active_config ?? null
-    setConfigJson(null)
-    setConfigCopied(false)
-    if (!activeConfig) return
-    setConfigLoading(true)
+    if (!configKey || !activeConfig) return
+    let cancelled = false
+    const store = (json: string) => { if (!cancelled) setFetchedConfig({ key: configKey, json }) }
     authFetch(`/configs/${encodeURIComponent(activeConfig)}`)
       .then(r => r.json())
-      .then((d: { config_json?: string }) => { setConfigJson(d.config_json ?? "") })
-      .catch(() => { setConfigJson("Failed to load config.") })
-      .finally(() => { setConfigLoading(false) })
-  }, [loggerId, loggers, authFetch])
+      .then((d: { config_json?: string }) => { store(d.config_json ?? "") })
+      .catch(() => { store("Failed to load config.") })
+    return () => { cancelled = true }
+  }, [configKey, activeConfig, authFetch])
+
+  const configLoading = configKey !== null && fetchedConfig?.key !== configKey
+  const configJson    = configKey !== null && fetchedConfig?.key === configKey ? fetchedConfig.json : null
+  const configCopied  = loggerId !== null && copiedFor === loggerId
 
   // Auto-scroll log entries to bottom.
   useEffect(() => {
@@ -133,8 +144,8 @@ export function LoggerDetailModal({ loggerId, onClose }: Props): JSX.Element {
                   title="Copy to clipboard"
                   onClick={() => {
                     void navigator.clipboard.writeText(configYaml ?? "").then(() => {
-                      setConfigCopied(true)
-                      setTimeout(() => { setConfigCopied(false) }, 2000)
+                      setCopiedFor(loggerId)
+                      setTimeout(() => { setCopiedFor(null) }, 2000)
                     })
                   }}
                 >
