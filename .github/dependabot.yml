@@ -6,6 +6,12 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    groups:
+      # Font Awesome packages pin exact fontawesome-common-types versions, so
+      # bumping them separately installs mismatched copies and breaks type-check.
+      fortawesome:
+        patterns:
+          - "@fortawesome/*"
 
   - package-ecosystem: github-actions
     directory: /
