@@ -29,17 +29,17 @@
 
 Defined in `.env` and validated at startup via Zod in `src/config.ts`:
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `VITE_SERVER_API_BASE_URL` | `http://localhost:8000` | Backend API base URL |
-| `VITE_DEFAULT_THEME` | `light` | UI theme (`light` or `dark`) |
-| `VITE_ALLOW_SELF_REGISTER` | `true` | Show registration link on login page |
-| `VITE_PROJECT` | `Project` | Project name shown in header |
-| `VITE_LOGO` | `./src/assets/nautilus.svg` | Path to logo shown in header |
-| `VITE_VERSION` | from `package.json` | Version string shown in header |
-| `VITE_LAYOUT` | `topnav` | Navigation layout (`topnav` or `drawer`) |
-| `VITE_DRAWER_BREAKPOINT` | `xl` | Breakpoint at which the drawer auto-opens/closes (`sm`, `md`, `lg`, `xl`, `2xl`) |
-| `VITE_DRAWER_COLLAPSIBLE` | `true` | If `false`, hides the toggle button and keeps the drawer permanently open |
+| Variable                   | Default                     | Purpose                                                                          |
+| -------------------------- | --------------------------- | -------------------------------------------------------------------------------- |
+| `VITE_SERVER_API_BASE_URL` | `http://localhost:8000`     | Backend API base URL                                                             |
+| `VITE_DEFAULT_THEME`       | `light`                     | UI theme (`light` or `dark`)                                                     |
+| `VITE_ALLOW_SELF_REGISTER` | `true`                      | Show registration link on login page                                             |
+| `VITE_PROJECT`             | `Project`                   | Project name shown in header                                                     |
+| `VITE_LOGO`                | `./src/assets/nautilus.svg` | Path to logo shown in header                                                     |
+| `VITE_VERSION`             | from `package.json`         | Version string shown in header                                                   |
+| `VITE_LAYOUT`              | `topnav`                    | Navigation layout (`topnav` or `drawer`)                                         |
+| `VITE_DRAWER_BREAKPOINT`   | `xl`                        | Breakpoint at which the drawer auto-opens/closes (`sm`, `md`, `lg`, `xl`, `2xl`) |
+| `VITE_DRAWER_COLLAPSIBLE`  | `true`                      | If `false`, hides the toggle button and keeps the drawer permanently open        |
 
 ## Navigation Layout
 
@@ -62,8 +62,13 @@ Routes are defined in `src/routes.ts`. Each route has a `navGroup` field that co
 
 ```ts
 export const navRoutes: NavRoute[] = [
-  { label: "Dashboard", path: "/dashboard", element: Dashboard, navGroup: "side" },
-  { label: "Settings",  path: "/settings",  element: Settings,  navGroup: "top" },
+  {
+    label: "Dashboard",
+    path: "/dashboard",
+    element: Dashboard,
+    navGroup: "side",
+  },
+  { label: "Settings", path: "/settings", element: Settings, navGroup: "top" },
 ]
 ```
 

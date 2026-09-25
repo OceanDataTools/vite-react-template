@@ -4,27 +4,39 @@ import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toDatetimeLocal } from "../utils/date"
 
-export const createKeySchema = z.object({
-  keyName: z.string().min(1),
-  neverExpires: z.boolean(),
-  expiresAt: z.string().nullable(),
-  permissions: z.array(z.object({ route: z.string(), method: z.string() })).min(1),
-}).superRefine((data, ctx) => {
-  const now = new Date()
+export const createKeySchema = z
+  .object({
+    keyName: z.string().min(1),
+    neverExpires: z.boolean(),
+    expiresAt: z.string().nullable(),
+    permissions: z
+      .array(z.object({ route: z.string(), method: z.string() }))
+      .min(1),
+  })
+  .superRefine((data, ctx) => {
+    const now = new Date()
 
-  // Expiration required if neverExpires is false
-  if (!data.neverExpires && !data.expiresAt) {
-    ctx.addIssue({ path: ["expiresAt"], message: "Expiration is required", code: "custom" })
-  }
-
-  // Expiration must be in the future if provided
-  if (data.expiresAt) {
-    const dt = new Date(data.expiresAt)
-    if (dt <= now) {
-      ctx.addIssue({ path: ["expiresAt"], message: "Expiration must be in the future", code: "custom" })
+    // Expiration required if neverExpires is false
+    if (!data.neverExpires && !data.expiresAt) {
+      ctx.addIssue({
+        path: ["expiresAt"],
+        message: "Expiration is required",
+        code: "custom",
+      })
     }
-  }
-})
+
+    // Expiration must be in the future if provided
+    if (data.expiresAt) {
+      const dt = new Date(data.expiresAt)
+      if (dt <= now) {
+        ctx.addIssue({
+          path: ["expiresAt"],
+          message: "Expiration must be in the future",
+          code: "custom",
+        })
+      }
+    }
+  })
 
 export type CreateKeySubmit = z.infer<typeof createKeySchema>
 
@@ -39,8 +51,14 @@ type Props = {
   onSubmitForm: (data: CreateKeySubmit & { id?: string }) => Promise<boolean>
 }
 
-
-const ApiKeyModal = ({ isOpen, onClose, initialValues, mode="create", routes, onSubmitForm }: Props) => {
+const ApiKeyModal = ({
+  isOpen,
+  onClose,
+  initialValues,
+  mode = "create",
+  routes,
+  onSubmitForm,
+}: Props) => {
   const dialogRef = useRef<HTMLDialogElement>(null)
 
   // Determine expiresAt for defaultValues
@@ -57,10 +75,17 @@ const ApiKeyModal = ({ isOpen, onClose, initialValues, mode="create", routes, on
     neverExpires: initialValues?.neverExpires ?? false,
   }
 
-  const { control, register, handleSubmit, setValue, reset, formState: { errors, isValid, isSubmitting } } = useForm<CreateKeySubmit>({
+  const {
+    control,
+    register,
+    handleSubmit,
+    setValue,
+    reset,
+    formState: { errors, isValid, isSubmitting },
+  } = useForm<CreateKeySubmit>({
     defaultValues,
     resolver: zodResolver(createKeySchema),
-    mode: "onChange"
+    mode: "onChange",
   })
 
   useEffect(() => {
@@ -76,14 +101,22 @@ const ApiKeyModal = ({ isOpen, onClose, initialValues, mode="create", routes, on
   }, [neverExpires, setValue])
 
   const allPermissions = routes.flatMap(({ route, methods }) =>
-    methods.map(method => ({ route, method }))
+    methods.map(method => ({ route, method })),
   )
   const allSelected =
     allPermissions.length > 0 &&
-    allPermissions.every(p => watchedPermissions.some(wp => wp.route === p.route && wp.method === p.method))
+    allPermissions.every(p =>
+      watchedPermissions.some(
+        wp => wp.route === p.route && wp.method === p.method,
+      ),
+    )
   const someSelected =
     !allSelected &&
-    allPermissions.some(p => watchedPermissions.some(wp => wp.route === p.route && wp.method === p.method))
+    allPermissions.some(p =>
+      watchedPermissions.some(
+        wp => wp.route === p.route && wp.method === p.method,
+      ),
+    )
 
   const selectAllRef = useRef<HTMLInputElement>(null)
   useEffect(() => {
@@ -91,16 +124,24 @@ const ApiKeyModal = ({ isOpen, onClose, initialValues, mode="create", routes, on
   }, [someSelected])
 
   const toggleAll = () => {
-    setValue("permissions", allSelected ? [] : allPermissions, { shouldValidate: true })
+    setValue("permissions", allSelected ? [] : allPermissions, {
+      shouldValidate: true,
+    })
   }
 
   const togglePermission = (route: string, method: string) => {
     if (mode === "reissue") return
-    const exists = watchedPermissions.some(p => p.route===route && p.method===method)
-    setValue("permissions", exists
-      ? watchedPermissions.filter(p => p.route!==route || p.method!==method)
-      : [...watchedPermissions, { route, method }],
-      { shouldValidate: true }
+    const exists = watchedPermissions.some(
+      p => p.route === route && p.method === method,
+    )
+    setValue(
+      "permissions",
+      exists
+        ? watchedPermissions.filter(
+            p => p.route !== route || p.method !== method,
+          )
+        : [...watchedPermissions, { route, method }],
+      { shouldValidate: true },
     )
   }
 
@@ -112,7 +153,10 @@ const ApiKeyModal = ({ isOpen, onClose, initialValues, mode="create", routes, on
   const onSubmit = async (values: CreateKeySubmit) => {
     const payload = { ...values, id: initialValues?.id }
     const success = await onSubmitForm(payload)
-    if (success) { reset(defaultValues); onClose() }
+    if (success) {
+      reset(defaultValues)
+      onClose()
+    }
   }
 
   if (!isOpen) return null
@@ -120,24 +164,40 @@ const ApiKeyModal = ({ isOpen, onClose, initialValues, mode="create", routes, on
   return (
     <dialog ref={dialogRef} className="modal" onClose={handleCancel}>
       <div className="modal-box max-w-md mx-auto">
-        <h3 className="font-bold text-xl">{mode==="create"?"Create API Key":"Re-Issue API Key"}</h3>
+        <h3 className="font-bold text-xl">
+          {mode === "create" ? "Create API Key" : "Re-Issue API Key"}
+        </h3>
 
         <form onSubmit={handleSubmit(onSubmit)}>
           {/* Key Name */}
           <fieldset className="fieldset">
             <legend className="fieldset-legend">Key Name</legend>
-            <input type="text" className="w-full border p-2 rounded" {...register("keyName")} readOnly={mode==="reissue"} />
-            {errors.keyName && <p className="text-error text-sm mt-1">{errors.keyName.message}</p>}
+            <input
+              type="text"
+              className="w-full border p-2 rounded"
+              {...register("keyName")}
+              readOnly={mode === "reissue"}
+            />
+            {errors.keyName && (
+              <p className="text-error text-sm mt-1">
+                {errors.keyName.message}
+              </p>
+            )}
           </fieldset>
 
           {/* Expires At */}
           <fieldset className="fieldset">
             <legend className="fieldset-legend">Expires At</legend>
             <label className="label cursor-pointer mb-1">
-              <input type="checkbox" className="checkbox checkbox-sm" {...register("neverExpires")} />
+              <input
+                type="checkbox"
+                className="checkbox checkbox-sm"
+                {...register("neverExpires")}
+              />
               <span className="label-text ml-2">Never expires</span>
             </label>
-            <input type="date"
+            <input
+              type="date"
               className="w-full border p-2 rounded"
               {...register("expiresAt")}
               readOnly={neverExpires}
@@ -147,9 +207,13 @@ const ApiKeyModal = ({ isOpen, onClose, initialValues, mode="create", routes, on
           {/* Permissions */}
           <fieldset className="fieldset">
             <legend className="fieldset-legend">Permissions</legend>
-            {mode==="reissue" && <p className="text-xs text-gray-500 mb-2">Permissions cannot be changed.</p>}
+            {mode === "reissue" && (
+              <p className="text-xs text-gray-500 mb-2">
+                Permissions cannot be changed.
+              </p>
+            )}
             <div className="border rounded">
-              {mode==="create" && (
+              {mode === "create" && (
                 <label className="label cursor-pointer text-sm px-2 py-1 border-b">
                   <input
                     ref={selectAllRef}
@@ -158,26 +222,39 @@ const ApiKeyModal = ({ isOpen, onClose, initialValues, mode="create", routes, on
                     checked={allSelected}
                     onChange={toggleAll}
                   />
-                  <span className="label-text ml-2 font-medium">Select all</span>
+                  <span className="label-text ml-2 font-medium">
+                    Select all
+                  </span>
                 </label>
               )}
               <div className="max-h-48 overflow-auto p-2">
                 {routes.map(({ route, methods, name }) => (
                   <div key={name} className="mb-2">
                     {methods.map(method => (
-                      <label key={method} className="label cursor-pointer text-sm">
+                      <label
+                        key={method}
+                        className="label cursor-pointer text-sm"
+                      >
                         <Controller
                           name="permissions"
                           control={control}
                           render={() => (
-                            <input type="checkbox" className="checkbox checkbox-sm"
-                              checked={watchedPermissions.some(p => p.route===route && p.method===method)}
-                              onChange={() => { togglePermission(route, method); }}
-                              disabled={mode==="reissue"}
+                            <input
+                              type="checkbox"
+                              className="checkbox checkbox-sm"
+                              checked={watchedPermissions.some(
+                                p => p.route === route && p.method === method,
+                              )}
+                              onChange={() => {
+                                togglePermission(route, method)
+                              }}
+                              disabled={mode === "reissue"}
                             />
                           )}
                         />
-                        <span className="label-text mr-2">{method} {route}</span>
+                        <span className="label-text mr-2">
+                          {method} {route}
+                        </span>
                       </label>
                     ))}
                   </div>
@@ -188,14 +265,30 @@ const ApiKeyModal = ({ isOpen, onClose, initialValues, mode="create", routes, on
 
           {/* Actions */}
           <div className="modal-action">
-            <button type="button" className="btn btn-outline btn-sm" onClick={handleCancel}>Cancel</button>
-            <button type="submit" className="btn btn-primary btn-sm" disabled={!isValid || isSubmitting}>
-              {isSubmitting ? "Saving..." : mode==="create"?"Create":"Re-Issue"}
+            <button
+              type="button"
+              className="btn btn-outline btn-sm"
+              onClick={handleCancel}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary btn-sm"
+              disabled={!isValid || isSubmitting}
+            >
+              {isSubmitting
+                ? "Saving..."
+                : mode === "create"
+                  ? "Create"
+                  : "Re-Issue"}
             </button>
           </div>
         </form>
       </div>
-      <form method="dialog" className="modal-backdrop"><button>close</button></form>
+      <form method="dialog" className="modal-backdrop">
+        <button>close</button>
+      </form>
     </dialog>
   )
 }

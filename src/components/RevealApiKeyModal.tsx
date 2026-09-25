@@ -9,7 +9,11 @@ type RevealApiKeyModalProps = {
   onClose: () => void
 }
 
-const RevealApiKeyModal: React.FC<RevealApiKeyModalProps> = ({ isOpen, keyValue, onClose }) => {
+const RevealApiKeyModal: React.FC<RevealApiKeyModalProps> = ({
+  isOpen,
+  keyValue,
+  onClose,
+}) => {
   const [copied, setCopied] = useState(false)
   const dialogRef = useRef<HTMLDialogElement>(null)
 
@@ -45,13 +49,17 @@ const RevealApiKeyModal: React.FC<RevealApiKeyModalProps> = ({ isOpen, keyValue,
           </button>
         </div>
         <div className="modal-action flex justify-between items-center w-full">
-          <p className="text-xs text-success">{copied && "Copied to clipboard!"}</p>
+          <p className="text-xs text-success">
+            {copied && "Copied to clipboard!"}
+          </p>
           <button className="btn btn-primary btn-sm" onClick={handleClose}>
             Close
           </button>
         </div>
       </div>
-      <form method="dialog" className="modal-backdrop"><button>close</button></form>
+      <form method="dialog" className="modal-backdrop">
+        <button>close</button>
+      </form>
     </dialog>
   )
 }

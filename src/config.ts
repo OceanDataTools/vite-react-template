@@ -1,7 +1,13 @@
 import { z } from "zod"
 import packageJson from "../package.json" with { type: "json" }
 
-const BREAKPOINT_PX = { sm: 640, md: 768, lg: 1024, xl: 1280, "2xl": 1536 } as const
+const BREAKPOINT_PX = {
+  sm: 640,
+  md: 768,
+  lg: 1024,
+  xl: 1280,
+  "2xl": 1536,
+} as const
 
 const EnvSchema = z.object({
   VITE_SERVER_API_BASE_URL: z.url().or(z.literal("")).default(""),

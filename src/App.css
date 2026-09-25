@@ -5,7 +5,9 @@
   --sidebar-width: 15rem;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
   overflow: hidden;
 }
@@ -14,12 +16,12 @@ html {
   font-size: 18px;
 }
 
-[data-theme=dark] {
-  --color-base-content: oklch(82% .02 257);
+[data-theme="dark"] {
+  --color-base-content: oklch(82% 0.02 257);
 }
 
-[data-theme=dark] .card {
-  border-color: oklch(36% .018 252);
+[data-theme="dark"] .card {
+  border-color: oklch(36% 0.018 252);
 }
 
 /* Constrain drawer overlay to the area below the topnav */
@@ -39,8 +41,8 @@ html {
   background-color: var(--color-base-300);
 }
 
-[data-theme=dark] .card .table-zebra tbody tr:nth-child(2n) {
-  background-color: oklch(27% .016 252);
+[data-theme="dark"] .card .table-zebra tbody tr:nth-child(2n) {
+  background-color: oklch(27% 0.016 252);
 }
 @plugin "daisyui" {
   themes: dark;
