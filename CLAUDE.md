@@ -11,6 +11,7 @@ npm run test         # Run tests once (Vitest)
 npm run lint         # Lint with ESLint
 npm run lint:fix     # Auto-fix lint issues
 npm run format       # Format with Prettier
+npm run format:check # Check formatting (runs in CI)
 npm run type-check   # TypeScript check only
 ```
 
@@ -85,7 +86,11 @@ Defined in `.env` and validated in `src/config.ts`:
 
 ## Pre-commit Hook
 
-Husky runs `lint:fix` and `format` automatically on every commit. Don't skip it.
+Husky runs [lint-staged](https://github.com/lint-staged/lint-staged) on every commit (`.husky/pre-commit`). It runs `eslint --fix` and `prettier --write` on **staged files only** and re-stages the fixes, so the commit contains the formatted code. Config is the `lint-staged` key in `package.json`. The hook is installed by `npm install` and needs Node ≥ 22.22.1. Don't skip it with `--no-verify`.
+
+CI also runs `npm run format:check`, so unformatted code that bypasses the hook still fails the build. To fix locally: `npm run format`.
+
+Repo-wide formatting commits are listed in `.git-blame-ignore-revs`. To have local `git blame` skip them, run once: `git config blame.ignoreRevsFile .git-blame-ignore-revs` (GitHub's blame view uses the file automatically).
 
 ## Branching & PR Workflow
 
