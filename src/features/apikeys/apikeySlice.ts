@@ -66,7 +66,8 @@ export const apikeySlice = createSlice({
       })
       .addCase(fetchApiKeyRoutesThunk.rejected, (state, action) => {
         state.loading = false
-        state.error = action.error.message ?? "Failed to load API key permissions"
+        state.error =
+          action.error.message ?? "Failed to load API key permissions"
         state.currentKeyPermissions = null
       })
 
@@ -75,7 +76,9 @@ export const apikeySlice = createSlice({
         (action): boolean => (action.type as string).endsWith("/rejected"),
         (state, action) => {
           state.loading = false
-          state.error = (action as { error?: SerializedError }).error?.message ?? "Error occurred"
+          state.error =
+            (action as { error?: SerializedError }).error?.message ??
+            "Error occurred"
         },
       )
   },

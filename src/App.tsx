@@ -43,7 +43,10 @@ type ProtectedRouteProps = {
   element: JSX.Element
 }
 
-export const ProtectedRoute = ({ rolesAllowed, element }: ProtectedRouteProps): JSX.Element => {
+export const ProtectedRoute = ({
+  rolesAllowed,
+  element,
+}: ProtectedRouteProps): JSX.Element => {
   const user = useAppSelector((state: RootState) => state.auth.user)
   const location = useLocation()
 
@@ -79,7 +82,9 @@ export const App = () => {
             {navRoutes
               .filter(r => r.isPublic === true)
               .map(({ path, element: Component }) =>
-                Component ? <Route key={path} path={path} element={<Component />} /> : null
+                Component ? (
+                  <Route key={path} path={path} element={<Component />} />
+                ) : null,
               )}
           </Route>
 
@@ -92,10 +97,13 @@ export const App = () => {
                     key={path}
                     path={path}
                     element={
-                      <ProtectedRoute rolesAllowed={required_roles} element={<Component />} />
+                      <ProtectedRoute
+                        rolesAllowed={required_roles}
+                        element={<Component />}
+                      />
                     }
                   />
-                ) : null
+                ) : null,
               )}
           </Route>
 

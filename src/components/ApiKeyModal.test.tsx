@@ -30,7 +30,9 @@ describe("ApiKeyModal", () => {
     const user = userEvent.setup()
     renderModal()
 
-    const selectAll = screen.getByRole<HTMLInputElement>("checkbox", { name: "Select all" })
+    const selectAll = screen.getByRole<HTMLInputElement>("checkbox", {
+      name: "Select all",
+    })
     const get = screen.getByRole("checkbox", { name: "GET /api/v1/items" })
     const post = screen.getByRole("checkbox", { name: "POST /api/v1/items" })
 
@@ -69,7 +71,9 @@ describe("ApiKeyModal", () => {
     const user = userEvent.setup()
     const { container } = renderModal()
 
-    const expiresAt = container.querySelector<HTMLInputElement>('input[name="expiresAt"]')
+    const expiresAt = container.querySelector<HTMLInputElement>(
+      'input[name="expiresAt"]',
+    )
     if (!expiresAt) throw new Error("expiresAt input not found")
     await user.type(expiresAt, "2999-01-01")
     expect(expiresAt).toHaveValue("2999-01-01")
@@ -88,7 +92,9 @@ describe("ApiKeyModal", () => {
 
     await user.type(screen.getByRole("textbox"), "my key")
     await user.click(screen.getByRole("checkbox", { name: "Never expires" }))
-    await user.click(screen.getByRole("checkbox", { name: "GET /api/v1/items" }))
+    await user.click(
+      screen.getByRole("checkbox", { name: "GET /api/v1/items" }),
+    )
 
     expect(submit).toBeEnabled()
   })

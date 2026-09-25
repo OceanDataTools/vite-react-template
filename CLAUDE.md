@@ -15,6 +15,7 @@ npm run type-check   # TypeScript check only
 ```
 
 To run a single test file:
+
 ```bash
 npx vitest run src/path/to/file.test.tsx
 ```
@@ -39,6 +40,7 @@ Always use the pre-typed hooks from `src/app/hooks.ts` — ESLint enforces this 
 ### Authentication
 
 `fetchWithAuth` in `src/utils/api.tsx` wraps all authenticated API calls. It automatically:
+
 - Attaches the Bearer token from Redux state
 - Retries once on 401 using the refresh token (httpOnly cookie via `credentials: "include"`)
 
@@ -47,6 +49,7 @@ On login, `loginThunk` fetches a token then dispatches `fetchUserProfileThunk` �
 ### Routing & Protection
 
 Routes are defined in `src/routes.ts` with metadata (label, `isPublic`, `required_roles`). `App.tsx` uses three guard components:
+
 - `RequireAuth` — redirects unauthenticated users to `/login`
 - `RequireUnAuth` — redirects authenticated users to `/`
 - `ProtectedRoute` — checks user roles against `required_roles`
@@ -62,6 +65,7 @@ Forms use React Hook Form with Zod resolvers. Async validation (e.g., checking e
 ### Hooks
 
 `src/hooks/` contains two general-purpose hooks:
+
 - `useToast` — ephemeral toast notifications
 - `useLocalStorage` — typed, JSON-serialized state persisted to localStorage (gracefully no-ops if storage is unavailable)
 
@@ -73,11 +77,11 @@ Custom theme colors are defined in `src/App.css` using OKLCH. Use DaisyUI utilit
 
 Defined in `.env` and validated in `src/config.ts`:
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `VITE_SERVER_API_BASE_URL` | `http://localhost:8000` | Backend API base URL |
-| `VITE_DEFAULT_THEME` | `light` | UI theme |
-| `VITE_ALLOW_SELF_REGISTER` | `true` | Show registration link |
+| Variable                   | Default                 | Purpose                |
+| -------------------------- | ----------------------- | ---------------------- |
+| `VITE_SERVER_API_BASE_URL` | `http://localhost:8000` | Backend API base URL   |
+| `VITE_DEFAULT_THEME`       | `light`                 | UI theme               |
+| `VITE_ALLOW_SELF_REGISTER` | `true`                  | Show registration link |
 
 ## Pre-commit Hook
 

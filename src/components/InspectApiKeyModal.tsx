@@ -37,9 +37,15 @@ const InspectApiKeyModal = ({ isOpen, apiKey, onClose }: Props) => {
         <div className="space-y-2 text-sm mb-4">
           <div className="flex justify-between items-center">
             <span className="text-base-content/60">Status</span>
-            {status === "active"  && <span className="badge badge-success badge-sm">Active</span>}
-            {status === "revoked" && <span className="badge badge-warning badge-sm">Revoked</span>}
-            {status === "expired" && <span className="badge badge-error badge-sm">Expired</span>}
+            {status === "active" && (
+              <span className="badge badge-success badge-sm">Active</span>
+            )}
+            {status === "revoked" && (
+              <span className="badge badge-warning badge-sm">Revoked</span>
+            )}
+            {status === "expired" && (
+              <span className="badge badge-error badge-sm">Expired</span>
+            )}
           </div>
           <div className="flex justify-between">
             <span className="text-base-content/60">Created</span>
@@ -47,7 +53,11 @@ const InspectApiKeyModal = ({ isOpen, apiKey, onClose }: Props) => {
           </div>
           <div className="flex justify-between">
             <span className="text-base-content/60">Expires</span>
-            <span>{expiresAt ? expiresAt.toLocaleString(undefined, dateFormat) : "Never"}</span>
+            <span>
+              {expiresAt
+                ? expiresAt.toLocaleString(undefined, dateFormat)
+                : "Never"}
+            </span>
           </div>
         </div>
 
@@ -55,12 +65,19 @@ const InspectApiKeyModal = ({ isOpen, apiKey, onClose }: Props) => {
 
         <p className="text-sm font-medium mb-2">Permissions</p>
         {(apiKey.permissions ?? []).length === 0 ? (
-          <p className="text-sm text-base-content/50">No permissions assigned.</p>
+          <p className="text-sm text-base-content/50">
+            No permissions assigned.
+          </p>
         ) : (
           <div className="space-y-1 max-h-48 overflow-y-auto">
             {(apiKey.permissions ?? []).map(p => (
-              <div key={`${p.method}-${p.route}`} className="flex items-center gap-2 text-sm">
-                <span className="badge badge-neutral badge-sm font-mono">{p.method}</span>
+              <div
+                key={`${p.method}-${p.route}`}
+                className="flex items-center gap-2 text-sm"
+              >
+                <span className="badge badge-neutral badge-sm font-mono">
+                  {p.method}
+                </span>
                 <span className="font-mono text-xs">{p.route}</span>
               </div>
             ))}
@@ -68,10 +85,14 @@ const InspectApiKeyModal = ({ isOpen, apiKey, onClose }: Props) => {
         )}
 
         <div className="modal-action">
-          <button className="btn btn-sm" onClick={onClose}>Close</button>
+          <button className="btn btn-sm" onClick={onClose}>
+            Close
+          </button>
         </div>
       </div>
-      <form method="dialog" className="modal-backdrop"><button>close</button></form>
+      <form method="dialog" className="modal-backdrop">
+        <button>close</button>
+      </form>
     </dialog>
   )
 }
