@@ -13,6 +13,7 @@ import {
 import type { RootState } from "./app/store"
 import { fetchUserProfileThunk } from "./features/auth/authThunks"
 import { useAppVersion } from "./hooks/useAppVersion"
+import { useLoggerStateWS } from "./hooks/useLoggerStateWS"
 import MainLayout from "./components/MainLayout"
 import { ForgotPasswordForm } from "./pages/ForgotPasswordForm"
 import { Home } from "./pages/Home"
@@ -65,6 +66,7 @@ export const App = () => {
   const dispatch = useAppDispatch()
   const token = useAppSelector((state: RootState) => state.auth.token)
   const version = useAppVersion()
+  useLoggerStateWS()
 
   useEffect(() => {
     document.title = version ? `${AppConfig.project} v${version}` : AppConfig.project
