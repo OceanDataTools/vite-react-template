@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react"
-import { useForm, Controller } from "react-hook-form"
+import { useForm, useWatch, Controller } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toDatetimeLocal } from "../utils/date"
@@ -57,7 +57,7 @@ const ApiKeyModal = ({ isOpen, onClose, initialValues, mode="create", routes, on
     neverExpires: initialValues?.neverExpires ?? false,
   }
 
-  const { control, register, handleSubmit, watch, setValue, reset, formState: { errors, isValid, isSubmitting } } = useForm<CreateKeySubmit>({
+  const { control, register, handleSubmit, setValue, reset, formState: { errors, isValid, isSubmitting } } = useForm<CreateKeySubmit>({
     defaultValues,
     resolver: zodResolver(createKeySchema),
     mode: "onChange"
@@ -67,8 +67,8 @@ const ApiKeyModal = ({ isOpen, onClose, initialValues, mode="create", routes, on
     if (isOpen) dialogRef.current?.showModal()
   }, [isOpen])
 
-  const watchedPermissions = watch("permissions")
-  const neverExpires = watch("neverExpires")
+  const watchedPermissions = useWatch({ control, name: "permissions" })
+  const neverExpires = useWatch({ control, name: "neverExpires" })
 
   // Blank out expiresAt if "Never Expires" is checked
   useEffect(() => {
