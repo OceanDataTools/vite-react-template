@@ -19,6 +19,12 @@ export type LogEntry = {
   message: string
 }
 
+// "connected"    — FastAPI WS up AND CachedDataServer reachable
+// "degraded"     — FastAPI WS up BUT CachedDataServer unreachable
+// "connecting"   — WS not yet open (initial connect or reconnecting)
+// "disconnected" — WS closed / failed
+export type WSStatus = "connected" | "degraded" | "connecting" | "disconnected"
+
 const MAX_LOG_ENTRIES = 500
 
 // Matches logger_supervisor's "Called start_logger for <id>: <config>" message,
@@ -44,6 +50,8 @@ type OpenRVDASState = {
   error: string | null
   loadingConfig: boolean
   loadConfigError: string | null
+  // Status of the single /updates/ws connection owned by useLoggerStateWS.
+  wsStatus: WSStatus
 }
 
 const initialState: OpenRVDASState = {
@@ -59,6 +67,7 @@ const initialState: OpenRVDASState = {
   error: null,
   loadingConfig: false,
   loadConfigError: null,
+  wsStatus: "connecting",
 }
 
 export const openrvdasSlice = createSlice({
@@ -76,6 +85,9 @@ export const openrvdasSlice = createSlice({
     },
     clearLoggerStatuses(state) {
       state.loggerStatuses = {}
+    },
+    setWsStatus(state, action: PayloadAction<WSStatus>) {
+      state.wsStatus = action.payload
     },
     optimisticallyActivateMode(state, action: PayloadAction<string>) {
       const targetMode = state.modes.find(m => m.id === action.payload)
@@ -191,6 +203,7 @@ export const {
   clearLoadConfigError,
   setLoggerStatuses,
   clearLoggerStatuses,
+  setWsStatus,
   addLogEntries,
   clearLogEntries,
   optimisticallyActivateMode,
