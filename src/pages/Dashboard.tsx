@@ -18,7 +18,6 @@ import {
   previewConfigurationThunk,
 } from "../features/openrvdas/openrvdasThunks"
 import type { ConfigPreview } from "../features/openrvdas/openrvdasThunks"
-import { useLoggerStateWS } from "../hooks/useLoggerStateWS"
 import { ConfigFileBrowser } from "../components/ConfigFileBrowser"
 import { LogPanel } from "../components/LogPanel"
 import { LoggerDetailModal } from "../components/LoggerDetailModal"
@@ -152,7 +151,7 @@ export const Dashboard = (): JSX.Element => {
     })
   }
 
-  const wsStatus = useLoggerStateWS()
+  const wsStatus = useAppSelector((state: RootState) => state.openrvdas.wsStatus)
   const backendConnected = wsStatus === "connected" || wsStatus === "degraded"
 
   useEffect(() => {

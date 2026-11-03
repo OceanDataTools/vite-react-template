@@ -7,8 +7,8 @@ import { faUser, faChevronDown } from "@fortawesome/free-solid-svg-icons"
 import type { RootState } from "../app/store"
 import { AppConfig } from "../config"
 import { getNavRoutes } from "../routes"
-import { useLoggerStateWS, type WSStatus } from "../hooks/useLoggerStateWS"
 import { useAppVersion } from "../hooks/useAppVersion"
+import type { WSStatus } from "../features/openrvdas/openrvdasSlice"
 
 const TOOL_ITEMS = [
   { label: "Test Connection",      path: "/tools/test-connection" },
@@ -27,7 +27,7 @@ export const TopNav = (): JSX.Element => {
   const location = useLocation()
   const dispatch = useAppDispatch()
   const { user } = useAppSelector((state: RootState) => state.auth)
-  const wsStatus = useLoggerStateWS()
+  const wsStatus = useAppSelector((state: RootState) => state.openrvdas.wsStatus)
   const version = useAppVersion()
   const hideNavPaths = ["/login"]
 

@@ -6,20 +6,25 @@ import {
   fetchLoggersThunk,
   fetchModesThunk,
 } from "../features/openrvdas/openrvdasThunks"
-import { setLoggerStatuses, addLogEntries, clearLogEntries, type LoggerStatus, type LogEntry } from "../features/openrvdas/openrvdasSlice"
-
-// "connected"    — FastAPI WS up AND CachedDataServer reachable
-// "degraded"     — FastAPI WS up BUT CachedDataServer unreachable
-// "connecting"   — WS not yet open (initial connect or reconnecting)
-// "disconnected" — WS closed / failed
-export type WSStatus = "connected" | "degraded" | "connecting" | "disconnected"
+import {
+  setLoggerStatuses,
+  setWsStatus,
+  addLogEntries,
+  clearLogEntries,
+  type LoggerStatus,
+  type LogEntry,
+  type WSStatus,
+} from "../features/openrvdas/openrvdasSlice"
 
 function wsBaseUrl(): string {
   const base = AppConfig.apiBaseUrl || window.location.origin
   return base.replace(/^http/, "ws")
 }
 
-export function useLoggerStateWS(): WSStatus {
+// Owns the app's single /api/v1/updates/ws connection. Mount exactly once (in
+// App); each extra mount opens another socket and double-dispatches every
+// message. Components read the connection state via state.openrvdas.wsStatus.
+export function useLoggerStateWS(): void {
   const dispatch = useAppDispatch()
   const [wsOpen, setWsOpen] = useState(false)
   const [cdsConnected, setCdsConnected] = useState<boolean | null>(null)
@@ -108,8 +113,12 @@ export function useLoggerStateWS(): WSStatus {
     }
   }, [dispatch])
 
-  if (connecting) return "connecting"
-  if (!wsOpen) return "disconnected"
-  if (cdsConnected === false) return "degraded"
-  return "connected"
+  let status: WSStatus = "connected"
+  if (connecting) status = "connecting"
+  else if (!wsOpen) status = "disconnected"
+  else if (cdsConnected === false) status = "degraded"
+
+  useEffect(() => {
+    dispatch(setWsStatus(status))
+  }, [status, dispatch])
 }
