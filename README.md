@@ -29,17 +29,48 @@
 
 Defined in `.env` and validated at startup via Zod in `src/config.ts`:
 
-| Variable                   | Default                     | Purpose                                                                          |
-| -------------------------- | --------------------------- | -------------------------------------------------------------------------------- |
-| `VITE_SERVER_API_BASE_URL` | `http://localhost:8000`     | Backend API base URL                                                             |
-| `VITE_DEFAULT_THEME`       | `light`                     | UI theme (`light` or `dark`)                                                     |
-| `VITE_ALLOW_SELF_REGISTER` | `true`                      | Show registration link on login page                                             |
-| `VITE_PROJECT`             | `Project`                   | Project name shown in header                                                     |
-| `VITE_LOGO`                | `./src/assets/nautilus.svg` | Path to logo shown in header                                                     |
-| `VITE_VERSION`             | from `package.json`         | Version string shown in header                                                   |
-| `VITE_LAYOUT`              | `topnav`                    | Navigation layout (`topnav` or `drawer`)                                         |
-| `VITE_DRAWER_BREAKPOINT`   | `xl`                        | Breakpoint at which the drawer auto-opens/closes (`sm`, `md`, `lg`, `xl`, `2xl`) |
-| `VITE_DRAWER_COLLAPSIBLE`  | `true`                      | If `false`, hides the toggle button and keeps the drawer permanently open        |
+| Variable                   | Default                | Purpose                                                                          |
+| -------------------------- | ---------------------- | -------------------------------------------------------------------------------- |
+| `VITE_SERVER_API_BASE_URL` | `""` (same origin)     | Backend API base URL                                                             |
+| `VITE_DEFAULT_THEME`       | `light`                | UI theme (`light` or `dark`)                                                     |
+| `VITE_ALLOW_SELF_REGISTER` | `true`                 | Show registration link on login page                                             |
+| `VITE_PROJECT`             | `Project`              | Project name shown in header                                                     |
+| `VITE_LOGO`                | bundled `nautilus.svg` | URL of logo shown in header (e.g. `/my-logo.svg` for a file in `public/`)        |
+| `VITE_VERSION`             | from `package.json`    | Version string shown in header                                                   |
+| `VITE_LAYOUT`              | `topnav`               | Navigation layout (`topnav` or `drawer`)                                         |
+| `VITE_DRAWER_BREAKPOINT`   | `xl`                   | Breakpoint at which the drawer auto-opens/closes (`sm`, `md`, `lg`, `xl`, `2xl`) |
+| `VITE_DRAWER_COLLAPSIBLE`  | `true`                 | If `false`, hides the toggle button and keeps the drawer permanently open        |
+
+## Docker
+
+The `Dockerfile` has two targets:
+
+- `dev`: the Vite dev server with hot reload. `docker compose up` uses it, mounting the source tree. This needs a `.env` file.
+- `prod`: the production bundle served by nginx on port 80. It falls back to `index.html` for client-side routes, caches hashed `/assets/*` for a year, and sends `no-cache` for `index.html`.
+
+### Building the production image
+
+```bash
+docker build --target prod -t web \
+  --build-arg VITE_PROJECT="My Project" \
+  --build-arg VITE_DEFAULT_THEME=dark \
+  .
+docker run -p 8080:80 -e API_UPSTREAM=http://backend:8000 web
+```
+
+Or with compose (build args are read from your shell or `.env`):
+
+```bash
+docker compose --profile prod up --build frontend-prod   # http://localhost:8080
+```
+
+**All `VITE_*` variables are build-time.** Vite inlines them into the bundle, so pass them as `--build-arg`. Setting them at `docker run` has no effect. `.env` is not copied into the image. Unset values fall back to the defaults in `src/config.ts`.
+
+### Runtime settings
+
+| Variable       | Purpose                                                                                                                                                             |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `API_UPSTREAM` | If set (e.g. `http://backend:8000`), nginx proxies `/api/` to it. Leave `VITE_SERVER_API_BASE_URL` empty and the app calls the API same-origin, with no CORS setup. |
 
 ## Navigation Layout
 

@@ -45,3 +45,6 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Build production Docker image
+        run: docker build --target prod -t vite-react-template:ci .

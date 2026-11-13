@@ -1,5 +1,6 @@
 import { z } from "zod"
 import packageJson from "../package.json" with { type: "json" }
+import defaultLogo from "./assets/nautilus.svg"
 
 const BREAKPOINT_PX = {
   sm: 640,
@@ -14,7 +15,11 @@ const EnvSchema = z.object({
   VITE_DEFAULT_THEME: z.enum(["light", "dark"]).default("light"),
   VITE_ALLOW_SELF_REGISTER: z.enum(["true", "false"]).default("true"),
   VITE_PROJECT: z.string().default("Project"),
-  VITE_LOGO: z.string().default("./src/assets/nautilus.svg"),
+  // Optional URL override; unset (or empty) falls back to the bundled logo.
+  VITE_LOGO: z
+    .string()
+    .optional()
+    .transform(v => (v === "" ? undefined : v)),
   VITE_VERSION: z.string().default(packageJson.version),
   VITE_LAYOUT: z.enum(["topnav", "drawer"]).default("topnav"),
   VITE_DRAWER_BREAKPOINT: z.enum(["sm", "md", "lg", "xl", "2xl"]).default("xl"),
@@ -28,7 +33,7 @@ export const AppConfig = {
   defaultTheme: parsed.VITE_DEFAULT_THEME,
   allowSelfRegister: parsed.VITE_ALLOW_SELF_REGISTER === "true",
   project: parsed.VITE_PROJECT,
-  logo: parsed.VITE_LOGO,
+  logo: parsed.VITE_LOGO ?? defaultLogo,
   version: parsed.VITE_VERSION,
   layout: parsed.VITE_LAYOUT,
   drawerBreakpoint: BREAKPOINT_PX[parsed.VITE_DRAWER_BREAKPOINT],
