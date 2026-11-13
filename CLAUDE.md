@@ -78,11 +78,11 @@ Custom theme colors are defined in `src/App.css` using OKLCH. Use DaisyUI utilit
 
 Defined in `.env` and validated in `src/config.ts`:
 
-| Variable                   | Default                 | Purpose                |
-| -------------------------- | ----------------------- | ---------------------- |
-| `VITE_SERVER_API_BASE_URL` | `http://localhost:8000` | Backend API base URL   |
-| `VITE_DEFAULT_THEME`       | `light`                 | UI theme               |
-| `VITE_ALLOW_SELF_REGISTER` | `true`                  | Show registration link |
+| Variable                   | Default            | Purpose                |
+| -------------------------- | ------------------ | ---------------------- |
+| `VITE_SERVER_API_BASE_URL` | `""` (same origin) | Backend API base URL   |
+| `VITE_DEFAULT_THEME`       | `light`            | UI theme               |
+| `VITE_ALLOW_SELF_REGISTER` | `true`             | Show registration link |
 
 ## Pre-commit Hook
 
