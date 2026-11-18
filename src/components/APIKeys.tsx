@@ -39,6 +39,21 @@ type CreateKeyFormValues = {
   neverExpires: boolean
 }
 
+/**
+ * Toast text for a failed thunk. `.unwrap()` throws the thunk's
+ * rejectWithValue payload (the backend's message, as a string) or a
+ * SerializedError.
+ */
+const failureMessage = (prefix: string, err: unknown): string => {
+  const detail =
+    typeof err === "string"
+      ? err
+      : err && typeof err === "object" && "message" in err
+        ? String(err.message)
+        : ""
+  return detail ? `${prefix}: ${detail}` : `${prefix}.`
+}
+
 const ApiKeys = () => {
   const dispatch = useAppDispatch()
   const {
@@ -104,8 +119,11 @@ const ApiKeys = () => {
 
       setRevealedKey(newKey.unhashed_key ?? null)
       return true
-    } catch {
-      setToast({ message: "Failed to create API key.", type: "error" })
+    } catch (err) {
+      setToast({
+        message: failureMessage("Failed to create API key", err),
+        type: "error",
+      })
       return false
     }
   }
@@ -128,7 +146,10 @@ const ApiKeys = () => {
       return true
     } catch (err) {
       console.error(err)
-      setToast({ message: "Failed to reissue API key.", type: "error" })
+      setToast({
+        message: failureMessage("Failed to reissue API key", err),
+        type: "error",
+      })
       return false
     }
   }

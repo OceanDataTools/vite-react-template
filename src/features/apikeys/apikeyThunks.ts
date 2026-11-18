@@ -30,13 +30,32 @@ type ThunkConfig = {
   rejectValue: string
 }
 
-const extractError = async (
+type ValidationIssue = { loc?: (string | number)[]; msg?: string }
+
+/**
+ * Pull a readable message out of an error response. FastAPI sends `detail`
+ * as a string for HTTPException, but as a list of `{loc, msg, type}` issues
+ * for request-validation (422) errors.
+ */
+export const extractError = async (
   res: Response,
   fallback: string,
 ): Promise<string> => {
   try {
-    const body = await res.json()
-    return (body as { detail?: string }).detail ?? fallback
+    const { detail } = (await res.json()) as { detail?: unknown }
+    if (typeof detail === "string" && detail) return detail
+    if (Array.isArray(detail)) {
+      const messages = (detail as ValidationIssue[])
+        .filter(issue => issue.msg)
+        .map(issue => {
+          const field = issue.loc?.[issue.loc.length - 1]
+          return field !== undefined && field !== "body"
+            ? `${String(field)}: ${issue.msg ?? ""}`
+            : (issue.msg ?? "")
+        })
+      if (messages.length) return messages.join("; ")
+    }
+    return fallback
   } catch {
     return fallback
   }

@@ -154,7 +154,11 @@ const ApiKeyModal = ({
   }
 
   const onSubmit = async (values: CreateKeySubmit) => {
-    const payload = { ...values, id: initialValues?.id }
+    // "Never expires" (or a cleared date field) leaves expiresAt as "".
+    // The backend's Optional[datetime] rejects "" with a 422, so send null.
+    const expiresAt =
+      values.neverExpires || !values.expiresAt ? null : values.expiresAt
+    const payload = { ...values, expiresAt, id: initialValues?.id }
     const success = await onSubmitForm(payload)
     if (success) {
       reset(defaultValues)

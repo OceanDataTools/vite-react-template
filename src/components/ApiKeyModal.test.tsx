@@ -15,8 +15,8 @@ const renderModal = (
       isOpen
       onClose={vi.fn()}
       routes={routes}
-      {...props}
       onSubmitForm={vi.fn(() => Promise.resolve(true))}
+      {...props}
     />,
   )
 
@@ -100,6 +100,71 @@ describe("ApiKeyModal", () => {
     )
 
     expect(submit).toBeEnabled()
+  })
+
+  it("submits expiresAt as null when never-expires is ticked (#109)", async () => {
+    const user = userEvent.setup()
+    const onSubmitForm = vi.fn(() => Promise.resolve(true))
+    const { container } = renderModal({ onSubmitForm })
+
+    await user.type(screen.getByRole("textbox"), "my key")
+    const expiresAt = container.querySelector<HTMLInputElement>(
+      'input[name="expiresAt"]',
+    )
+    if (!expiresAt) throw new Error("expiresAt input not found")
+    await user.type(expiresAt, "2999-01-01")
+    await user.click(screen.getByRole("checkbox", { name: "Never expires" }))
+    await user.click(
+      screen.getByRole("checkbox", { name: "GET /api/v1/items" }),
+    )
+    await user.click(screen.getByRole("button", { name: "Create" }))
+
+    expect(onSubmitForm).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ neverExpires: true, expiresAt: null }),
+    )
+  })
+
+  it("submits expiresAt as null on reissue of a never-expiring key", async () => {
+    const user = userEvent.setup()
+    const onSubmitForm = vi.fn(() => Promise.resolve(true))
+    renderModal({
+      onSubmitForm,
+      mode: "reissue",
+      initialValues: {
+        id: "abc",
+        keyName: "existing",
+        neverExpires: true,
+        expiresAt: null,
+        permissions: [{ route: "/api/v1/items", method: "GET" }],
+      },
+    })
+
+    await user.click(screen.getByRole("button", { name: /re-?issue/i }))
+
+    expect(onSubmitForm).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "abc", expiresAt: null }),
+    )
+  })
+
+  it("passes a chosen expiration through unchanged", async () => {
+    const user = userEvent.setup()
+    const onSubmitForm = vi.fn(() => Promise.resolve(true))
+    const { container } = renderModal({ onSubmitForm })
+
+    await user.type(screen.getByRole("textbox"), "my key")
+    const expiresAt = container.querySelector<HTMLInputElement>(
+      'input[name="expiresAt"]',
+    )
+    if (!expiresAt) throw new Error("expiresAt input not found")
+    await user.type(expiresAt, "2999-01-01")
+    await user.click(
+      screen.getByRole("checkbox", { name: "GET /api/v1/items" }),
+    )
+    await user.click(screen.getByRole("button", { name: "Create" }))
+
+    expect(onSubmitForm).toHaveBeenCalledWith(
+      expect.objectContaining({ neverExpires: false, expiresAt: "2999-01-01" }),
+    )
   })
 
   it("explains an empty route list instead of showing select-all", () => {
