@@ -9,10 +9,10 @@ import { EntryRow } from "./LogPanel"
 import { useAuthFetch } from "../hooks/useAuthFetch"
 
 const CDS_STATUS_BADGE: Record<string, string> = {
-  RUNNING:  "badge-success",
+  RUNNING: "badge-success",
   STARTING: "badge-warning",
-  FAILED:   "badge-error",
-  EXITED:   "badge-ghost",
+  FAILED: "badge-error",
+  EXITED: "badge-ghost",
 }
 
 type Props = {
@@ -21,21 +21,28 @@ type Props = {
 }
 
 export function LoggerDetailModal({ loggerId, onClose }: Props): JSX.Element {
-  const dialogRef      = useRef<HTMLDialogElement>(null)
+  const dialogRef = useRef<HTMLDialogElement>(null)
   const logContainerRef = useRef<HTMLDivElement>(null)
   // Stable ref so the native close listener doesn't need to be re-registered
   // each time the parent re-renders with a new inline onClose arrow function.
   const onCloseRef = useRef(onClose)
-  useEffect(() => { onCloseRef.current = onClose })
+  useEffect(() => {
+    onCloseRef.current = onClose
+  })
 
-  const loggers        = useAppSelector((s: RootState) => s.openrvdas.loggers)
-  const loggerStatuses = useAppSelector((s: RootState) => s.openrvdas.loggerStatuses)
-  const logEntries     = useAppSelector((s: RootState) => s.openrvdas.logEntries)
+  const loggers = useAppSelector((s: RootState) => s.openrvdas.loggers)
+  const loggerStatuses = useAppSelector(
+    (s: RootState) => s.openrvdas.loggerStatuses,
+  )
+  const logEntries = useAppSelector((s: RootState) => s.openrvdas.logEntries)
 
   // Fetch results and the copied flag are keyed by what they belong to, so a
   // stale value is ignored during render instead of being reset in an effect.
-  const [fetchedConfig, setFetchedConfig] = useState<{ key: string; json: string } | null>(null)
-  const [copiedFor, setCopiedFor]         = useState<string | null>(null)
+  const [fetchedConfig, setFetchedConfig] = useState<{
+    key: string
+    json: string
+  } | null>(null)
+  const [copiedFor, setCopiedFor] = useState<string | null>(null)
 
   const { authFetch } = useAuthFetch()
 
@@ -49,7 +56,9 @@ export function LoggerDetailModal({ loggerId, onClose }: Props): JSX.Element {
       onCloseRef.current()
     }
     dialog.addEventListener("close", handler)
-    return () => { dialog.removeEventListener("close", handler) }
+    return () => {
+      dialog.removeEventListener("close", handler)
+    }
   }, [])
 
   // Show or close the native <dialog> in sync with loggerId.
@@ -64,23 +73,35 @@ export function LoggerDetailModal({ loggerId, onClose }: Props): JSX.Element {
   const activeConfig = loggerId
     ? (loggers.find(l => l.id === loggerId)?.active_config ?? null)
     : null
-  const configKey = loggerId && activeConfig ? JSON.stringify([loggerId, activeConfig]) : null
+  const configKey =
+    loggerId && activeConfig ? JSON.stringify([loggerId, activeConfig]) : null
 
   // Fetch config whenever the selected logger or its active config changes.
   useEffect(() => {
     if (!configKey || !activeConfig) return
     let cancelled = false
-    const store = (json: string) => { if (!cancelled) setFetchedConfig({ key: configKey, json }) }
+    const store = (json: string) => {
+      if (!cancelled) setFetchedConfig({ key: configKey, json })
+    }
     authFetch(`/configs/${encodeURIComponent(activeConfig)}`)
       .then(r => r.json())
-      .then((d: { config_json?: string }) => { store(d.config_json ?? "") })
-      .catch(() => { store("Failed to load config.") })
-    return () => { cancelled = true }
+      .then((d: { config_json?: string }) => {
+        store(d.config_json ?? "")
+      })
+      .catch(() => {
+        store("Failed to load config.")
+      })
+    return () => {
+      cancelled = true
+    }
   }, [configKey, activeConfig, authFetch])
 
   const configLoading = configKey !== null && fetchedConfig?.key !== configKey
-  const configJson    = configKey !== null && fetchedConfig?.key === configKey ? fetchedConfig.json : null
-  const configCopied  = loggerId !== null && copiedFor === loggerId
+  const configJson =
+    configKey !== null && fetchedConfig?.key === configKey
+      ? fetchedConfig.json
+      : null
+  const configCopied = loggerId !== null && copiedFor === loggerId
 
   // Auto-scroll log entries to bottom.
   useEffect(() => {
@@ -88,29 +109,40 @@ export function LoggerDetailModal({ loggerId, onClose }: Props): JSX.Element {
     if (el) el.scrollTop = el.scrollHeight
   }, [logEntries.length, loggerId])
 
-  const logger = loggerId ? (loggers.find(l => l.id === loggerId) ?? null) : null
+  const logger = loggerId
+    ? (loggers.find(l => l.id === loggerId) ?? null)
+    : null
   const cdsEntry = logger
     ? (loggerStatuses[logger.id] as (typeof loggerStatuses)[string] | undefined)
     : undefined
-  const statusIsFresh = logger?.active_config != null && cdsEntry?.config === logger.active_config
+  const statusIsFresh =
+    logger?.active_config != null && cdsEntry?.config === logger.active_config
   const effectiveStatus = statusIsFresh ? cdsEntry.status : null
   const badgeClass = effectiveStatus
     ? (CDS_STATUS_BADGE[effectiveStatus] ?? "badge-ghost")
-    : (logger?.running ? "badge-success" : "badge-ghost")
-  const statusLabel = effectiveStatus ?? (logger?.running ? "RUNNING" : "EXITED")
+    : logger?.running
+      ? "badge-success"
+      : "badge-ghost"
+  const statusLabel =
+    effectiveStatus ?? (logger?.running ? "RUNNING" : "EXITED")
 
   const recentEntries = loggerId
     ? logEntries
-        .filter(e =>
-          e.source === loggerId ||
-          (e.source === "logger_manager" && e.message.includes(loggerId))
+        .filter(
+          e =>
+            e.source === loggerId ||
+            (e.source === "logger_manager" && e.message.includes(loggerId)),
         )
         .slice(-30)
         .sort((a, b) => a.timestamp - b.timestamp)
     : []
 
   const configYaml = (() => {
-    try { return yamlDump(JSON.parse(configJson ?? "")) } catch { return configJson }
+    try {
+      return yamlDump(JSON.parse(configJson ?? ""))
+    } catch {
+      return configJson
+    }
   })()
 
   return (
@@ -120,22 +152,30 @@ export function LoggerDetailModal({ loggerId, onClose }: Props): JSX.Element {
           <>
             <div className="flex items-center gap-3 mb-4 shrink-0">
               <h3 className="font-bold text-lg font-mono">{logger.id}</h3>
-              <span className={`badge badge-sm ${badgeClass}`}>{statusLabel}</span>
+              <span className={`badge badge-sm ${badgeClass}`}>
+                {statusLabel}
+              </span>
             </div>
 
             <h4 className="font-semibold text-sm mb-1 shrink-0">Recent logs</h4>
-            <div ref={logContainerRef} className="bg-base-300 rounded-lg p-3 mb-4 overflow-y-auto shrink-0 max-h-48 text-xs">
-              {recentEntries.length === 0
-                ? <p className="text-xs opacity-40 font-mono">No log entries.</p>
-                : recentEntries.map((e, i) => <EntryRow key={i} entry={e} />)
-              }
+            <div
+              ref={logContainerRef}
+              className="bg-base-300 rounded-lg p-3 mb-4 overflow-y-auto shrink-0 max-h-48 text-xs"
+            >
+              {recentEntries.length === 0 ? (
+                <p className="text-xs opacity-40 font-mono">No log entries.</p>
+              ) : (
+                recentEntries.map((e, i) => <EntryRow key={i} entry={e} />)
+              )}
             </div>
 
             <div className="flex items-center justify-between shrink-0 mb-1">
               <h4 className="font-semibold text-sm">
                 Config
                 {logger.active_config && (
-                  <span className="font-mono font-normal opacity-50 ml-2">{logger.active_config}</span>
+                  <span className="font-mono font-normal opacity-50 ml-2">
+                    {logger.active_config}
+                  </span>
                 )}
               </h4>
               {logger.active_config && !configLoading && configJson && (
@@ -143,19 +183,28 @@ export function LoggerDetailModal({ loggerId, onClose }: Props): JSX.Element {
                   className="btn btn-ghost btn-sm btn-square"
                   title="Copy to clipboard"
                   onClick={() => {
-                    void navigator.clipboard.writeText(configYaml ?? "").then(() => {
-                      setCopiedFor(loggerId)
-                      setTimeout(() => { setCopiedFor(null) }, 2000)
-                    })
+                    void navigator.clipboard
+                      .writeText(configYaml ?? "")
+                      .then(() => {
+                        setCopiedFor(loggerId)
+                        setTimeout(() => {
+                          setCopiedFor(null)
+                        }, 2000)
+                      })
                   }}
                 >
-                  <FontAwesomeIcon icon={configCopied ? faCheck : faCopy} className={configCopied ? "text-success" : ""} />
+                  <FontAwesomeIcon
+                    icon={configCopied ? faCheck : faCopy}
+                    className={configCopied ? "text-success" : ""}
+                  />
                 </button>
               )}
             </div>
             <div className="flex-1 overflow-y-auto min-h-0">
               {!logger.active_config ? (
-                <p className="text-xs opacity-40 font-mono">No active config.</p>
+                <p className="text-xs opacity-40 font-mono">
+                  No active config.
+                </p>
               ) : configLoading ? (
                 <div className="flex justify-center py-6">
                   <span className="loading loading-spinner loading-sm" />

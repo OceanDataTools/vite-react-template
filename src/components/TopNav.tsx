@@ -11,23 +11,25 @@ import { useAppVersion } from "../hooks/useAppVersion"
 import type { WSStatus } from "../features/openrvdas/openrvdasSlice"
 
 const TOOL_ITEMS = [
-  { label: "Test Connection",      path: "/tools/test-connection" },
+  { label: "Test Connection", path: "/tools/test-connection" },
   { label: "Verify Parser Format", path: "/tools/verify-parser" },
-  { label: "Template Builder",     path: "/tools/template-builder" },
+  { label: "Template Builder", path: "/tools/template-builder" },
 ]
 
 const WS_STATUS_STYLE: Record<WSStatus, { dot: string; label: string }> = {
-  connected:    { dot: "bg-success", label: "connected" },
-  degraded:     { dot: "bg-warning", label: "data server unreachable" },
-  connecting:   { dot: "bg-warning", label: "connecting" },
-  disconnected: { dot: "bg-error",   label: "disconnected" },
+  connected: { dot: "bg-success", label: "connected" },
+  degraded: { dot: "bg-warning", label: "data server unreachable" },
+  connecting: { dot: "bg-warning", label: "connecting" },
+  disconnected: { dot: "bg-error", label: "disconnected" },
 }
 
 export const TopNav = (): JSX.Element => {
   const location = useLocation()
   const dispatch = useAppDispatch()
   const { user } = useAppSelector((state: RootState) => state.auth)
-  const wsStatus = useAppSelector((state: RootState) => state.openrvdas.wsStatus)
+  const wsStatus = useAppSelector(
+    (state: RootState) => state.openrvdas.wsStatus,
+  )
   const version = useAppVersion()
   const hideNavPaths = ["/login"]
 
@@ -37,15 +39,18 @@ export const TopNav = (): JSX.Element => {
   const isDrawer = AppConfig.layout === "drawer"
 
   const dropdownLinks = getNavRoutes("top", user).filter(
-    ({ isPublic = false }) => !(isPublic && hideNavPaths.includes(location.pathname))
+    ({ isPublic = false }) =>
+      !(isPublic && hideNavPaths.includes(location.pathname)),
   )
 
   const navBarLinks = getNavRoutes("side", user).filter(
-    ({ isPublic = false }) => !(isPublic && hideNavPaths.includes(location.pathname))
+    ({ isPublic = false }) =>
+      !(isPublic && hideNavPaths.includes(location.pathname)),
   )
 
   const topBarLinks = getNavRoutes("topbar", user).filter(
-    ({ isPublic = false }) => !(isPublic && hideNavPaths.includes(location.pathname))
+    ({ isPublic = false }) =>
+      !(isPublic && hideNavPaths.includes(location.pathname)),
   )
 
   return (
@@ -101,7 +106,11 @@ export const TopNav = (): JSX.Element => {
 
           {user && (
             <div className="dropdown dropdown-end">
-              <div tabIndex={0} role="button" className="btn btn-ghost px-2 gap-1">
+              <div
+                tabIndex={0}
+                role="button"
+                className="btn btn-ghost px-2 gap-1"
+              >
                 Tools
                 <FontAwesomeIcon icon={faChevronDown} size="xs" />
               </div>
@@ -113,7 +122,7 @@ export const TopNav = (): JSX.Element => {
                   <li key={path}>
                     <button
                       onClick={() => {
-                        (document.activeElement as HTMLElement | null)?.blur()
+                        ;(document.activeElement as HTMLElement | null)?.blur()
                         void navigate(path)
                       }}
                     >
@@ -124,16 +133,13 @@ export const TopNav = (): JSX.Element => {
               </ul>
             </div>
           )}
-          { }
+          {}
           {user ? (
             <div className="dropdown dropdown-end">
               <div tabIndex={0} role="button" className="btn btn-ghost p-0">
                 <FontAwesomeIcon icon={faUser} />
               </div>
-              <div
-                tabIndex={0}
-                className="dropdown-content w-48"
-              >
+              <div tabIndex={0} className="dropdown-content w-48">
                 <div className="px-4 py-2">
                   <p className="text-base-content font-semibold truncate">
                     {user.full_name || user.username}
@@ -147,16 +153,26 @@ export const TopNav = (): JSX.Element => {
                   {dropdownLinks.map(({ label, path }) => (
                     <li key={`vislink_${label}`}>
                       <NavLink
-                        onClick={() => { (document.activeElement as HTMLElement | null)?.blur(); }}
+                        onClick={() => {
+                          ;(
+                            document.activeElement as HTMLElement | null
+                          )?.blur()
+                        }}
                         to={path}
                       >
                         {label}
                       </NavLink>
                     </li>
                   ))}
-                  {dropdownLinks.length > 0 && <li className="pointer-events-none"><hr className="border-base-300" /></li>}
+                  {dropdownLinks.length > 0 && (
+                    <li className="pointer-events-none">
+                      <hr className="border-base-300" />
+                    </li>
+                  )}
                   <li>
-                    <button className="text-error" onClick={handleLogout}>Logout</button>
+                    <button className="text-error" onClick={handleLogout}>
+                      Logout
+                    </button>
                   </li>
                 </ul>
               </div>

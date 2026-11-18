@@ -46,7 +46,10 @@ describe("useLoggerStateWS", () => {
     FakeWebSocket.instances = []
     vi.stubGlobal("WebSocket", FakeWebSocket)
     // Thunks dispatched on open hit the backend; keep them pending.
-    vi.stubGlobal("fetch", vi.fn(() => new Promise<never>(() => undefined)))
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<never>(() => undefined)),
+    )
   })
 
   afterEach(() => {
@@ -89,19 +92,30 @@ describe("useLoggerStateWS", () => {
     const wrapper = ({ children }: PropsWithChildren) => (
       <Provider store={store}>{children}</Provider>
     )
-    renderHook(() => { useLoggerStateWS() }, { wrapper })
+    renderHook(
+      () => {
+        useLoggerStateWS()
+      },
+      { wrapper },
+    )
     const [ws] = FakeWebSocket.instances
     const status = () => store.getState().openrvdas.wsStatus
 
     expect(status()).toBe("connecting")
 
-    act(() => { ws.open() })
+    act(() => {
+      ws.open()
+    })
     expect(status()).toBe("connected")
 
-    act(() => { ws.send({ type: "status", cds_connected: false }) })
+    act(() => {
+      ws.send({ type: "status", cds_connected: false })
+    })
     expect(status()).toBe("degraded")
 
-    act(() => { ws.close() })
+    act(() => {
+      ws.close()
+    })
     expect(status()).toBe("disconnected")
   })
 })

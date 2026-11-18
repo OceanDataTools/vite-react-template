@@ -58,7 +58,8 @@ export const TemplateBuilderPage = (): JSX.Element => {
   const outputRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (result) outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+    if (result)
+      outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
   }, [result])
 
   const handleRender = async () => {
@@ -71,7 +72,10 @@ export const TemplateBuilderPage = (): JSX.Element => {
       const res = await authFetch("/configuration/render-template", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ template_yaml: templateYaml, config_yaml: configYaml }),
+        body: JSON.stringify({
+          template_yaml: templateYaml,
+          config_yaml: configYaml,
+        }),
       })
       if (!res.ok) {
         const d = (await res.json().catch(() => ({}))) as { detail?: string }
@@ -101,22 +105,33 @@ export const TemplateBuilderPage = (): JSX.Element => {
         <div className="card-body py-4 px-5 space-y-4">
           <div className="form-control">
             <div className="flex items-center justify-between mb-1">
-              <span className="label-text font-medium">Template definition</span>
+              <span className="label-text font-medium">
+                Template definition
+              </span>
               <div className="flex items-center gap-2">
-                <span className="opacity-50 text-xs">logger_templates, config_templates, variables</span>
+                <span className="opacity-50 text-xs">
+                  logger_templates, config_templates, variables
+                </span>
                 <button
                   type="button"
                   className="btn btn-ghost btn-sm btn-square"
                   title="Copy template definition"
                   disabled={!templateYaml}
                   onClick={() => {
-                    void navigator.clipboard.writeText(templateYaml).then(() => {
-                      setTemplateCopied(true)
-                      setTimeout(() => { setTemplateCopied(false) }, 2000)
-                    })
+                    void navigator.clipboard
+                      .writeText(templateYaml)
+                      .then(() => {
+                        setTemplateCopied(true)
+                        setTimeout(() => {
+                          setTemplateCopied(false)
+                        }, 2000)
+                      })
                   }}
                 >
-                  <FontAwesomeIcon icon={templateCopied ? faCheck : faCopy} className={templateCopied ? "text-success" : ""} />
+                  <FontAwesomeIcon
+                    icon={templateCopied ? faCheck : faCopy}
+                    className={templateCopied ? "text-success" : ""}
+                  />
                 </button>
               </div>
             </div>
@@ -127,7 +142,10 @@ export const TemplateBuilderPage = (): JSX.Element => {
               value={templateYaml}
               onChange={e => {
                 setTemplateYaml(e.target.value)
-                localStorage.setItem("templateBuilder.templateYaml", e.target.value)
+                localStorage.setItem(
+                  "templateBuilder.templateYaml",
+                  e.target.value,
+                )
               }}
             />
           </div>
@@ -136,7 +154,9 @@ export const TemplateBuilderPage = (): JSX.Element => {
             <div className="flex items-center justify-between mb-1">
               <span className="label-text font-medium">Logger config</span>
               <div className="flex items-center gap-2">
-                <span className="opacity-50 text-xs">loggers referencing the templates above</span>
+                <span className="opacity-50 text-xs">
+                  loggers referencing the templates above
+                </span>
                 <button
                   type="button"
                   className="btn btn-ghost btn-sm btn-square"
@@ -145,11 +165,16 @@ export const TemplateBuilderPage = (): JSX.Element => {
                   onClick={() => {
                     void navigator.clipboard.writeText(configYaml).then(() => {
                       setConfigCopied(true)
-                      setTimeout(() => { setConfigCopied(false) }, 2000)
+                      setTimeout(() => {
+                        setConfigCopied(false)
+                      }, 2000)
                     })
                   }}
                 >
-                  <FontAwesomeIcon icon={configCopied ? faCheck : faCopy} className={configCopied ? "text-success" : ""} />
+                  <FontAwesomeIcon
+                    icon={configCopied ? faCheck : faCopy}
+                    className={configCopied ? "text-success" : ""}
+                  />
                 </button>
               </div>
             </div>
@@ -160,7 +185,10 @@ export const TemplateBuilderPage = (): JSX.Element => {
               value={configYaml}
               onChange={e => {
                 setConfigYaml(e.target.value)
-                localStorage.setItem("templateBuilder.configYaml", e.target.value)
+                localStorage.setItem(
+                  "templateBuilder.configYaml",
+                  e.target.value,
+                )
                 setResult(null)
                 setError(null)
               }}
@@ -174,13 +202,17 @@ export const TemplateBuilderPage = (): JSX.Element => {
               disabled={!canSubmit || loading}
               onClick={() => void handleRender()}
             >
-              {loading && <span className="loading loading-spinner loading-xs" />}
+              {loading && (
+                <span className="loading loading-spinner loading-xs" />
+              )}
               Render
             </button>
             <button
               type="button"
               className="btn btn-ghost btn-sm opacity-60 hover:opacity-100 px-0 ml-auto"
-              onClick={() => { guideRef.current?.showModal() }}
+              onClick={() => {
+                guideRef.current?.showModal()
+              }}
             >
               Template syntax reference →
             </button>
@@ -198,8 +230,9 @@ export const TemplateBuilderPage = (): JSX.Element => {
               Variable substitution
             </p>
             <p className="text-xs opacity-70 mb-2">
-              Inside a template, use <code className="font-mono">{"<<variable>>"}</code> to
-              reference a variable. Optionally supply a default with{" "}
+              Inside a template, use{" "}
+              <code className="font-mono">{"<<variable>>"}</code> to reference a
+              variable. Optionally supply a default with{" "}
               <code className="font-mono">{"<<variable|default>>"}</code>.
             </p>
             <div className="overflow-x-auto">
@@ -302,7 +335,9 @@ loggers:
             </form>
           </div>
         </div>
-        <form method="dialog" className="modal-backdrop"><button>close</button></form>
+        <form method="dialog" className="modal-backdrop">
+          <button>close</button>
+        </form>
       </dialog>
 
       {error && (
@@ -341,12 +376,14 @@ loggers:
                     className="btn btn-ghost btn-sm btn-square"
                     title="Copy output"
                     onClick={() => {
-                      void navigator.clipboard.writeText(outputYaml).then(() => {
-                        setOutputCopied(true)
-                        setTimeout(() => {
-                          setOutputCopied(false)
-                        }, 2000)
-                      })
+                      void navigator.clipboard
+                        .writeText(outputYaml)
+                        .then(() => {
+                          setOutputCopied(true)
+                          setTimeout(() => {
+                            setOutputCopied(false)
+                          }, 2000)
+                        })
                     }}
                   >
                     <FontAwesomeIcon
@@ -363,7 +400,9 @@ loggers:
           )}
           {result.errors.length === 0 && !outputYaml && (
             <div role="alert" className="alert alert-info text-sm py-2">
-              <span>No output — the merged config produced an empty result.</span>
+              <span>
+                No output — the merged config produced an empty result.
+              </span>
             </div>
           )}
         </div>

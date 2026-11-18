@@ -74,7 +74,9 @@ export function useLoggerStateWS(): void {
           } else if (msg.type === "status") {
             setCdsConnected(msg.cds_connected ?? null)
           } else if (msg.type === "logger_status" && msg.data) {
-            dispatch(setLoggerStatuses(msg.data as Record<string, LoggerStatus>))
+            dispatch(
+              setLoggerStatuses(msg.data as Record<string, LoggerStatus>),
+            )
           } else if (msg.type === "log_entries" && msg.data) {
             if (pendingLogClear.current) {
               pendingLogClear.current = false

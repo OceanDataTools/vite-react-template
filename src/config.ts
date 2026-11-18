@@ -1,14 +1,24 @@
 import { z } from "zod"
 import defaultLogo from "./assets/nautilus.svg"
 
-const BREAKPOINT_PX = { sm: 640, md: 768, lg: 1024, xl: 1280, "2xl": 1536 } as const
+const BREAKPOINT_PX = {
+  sm: 640,
+  md: 768,
+  lg: 1024,
+  xl: 1280,
+  "2xl": 1536,
+} as const
 
 const EnvSchema = z.object({
   VITE_SERVER_API_BASE_URL: z.url().or(z.literal("")).default(""),
   VITE_DEFAULT_THEME: z.enum(["light", "dark"]).default("light"),
   VITE_ALLOW_SELF_REGISTER: z.enum(["true", "false"]).default("true"),
   VITE_PROJECT: z.string().default("OpenRVDAS"),
-  VITE_LOGO: z.string().default(""),
+  // Optional URL override; unset (or empty) falls back to the bundled logo.
+  VITE_LOGO: z
+    .string()
+    .optional()
+    .transform(v => (v === "" ? undefined : v)),
   VITE_LAYOUT: z.enum(["topnav", "drawer"]).default("topnav"),
   VITE_DRAWER_BREAKPOINT: z.enum(["sm", "md", "lg", "xl", "2xl"]).default("xl"),
   VITE_DRAWER_COLLAPSIBLE: z.enum(["true", "false"]).default("true"),
@@ -21,7 +31,7 @@ export const AppConfig = {
   defaultTheme: parsed.VITE_DEFAULT_THEME,
   allowSelfRegister: parsed.VITE_ALLOW_SELF_REGISTER === "true",
   project: parsed.VITE_PROJECT,
-  logo: parsed.VITE_LOGO || defaultLogo,
+  logo: parsed.VITE_LOGO ?? defaultLogo,
   layout: parsed.VITE_LAYOUT,
   drawerBreakpoint: BREAKPOINT_PX[parsed.VITE_DRAWER_BREAKPOINT],
   drawerCollapsible: parsed.VITE_DRAWER_COLLAPSIBLE === "true",

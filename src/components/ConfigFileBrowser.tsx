@@ -41,8 +41,12 @@ export function ConfigFileBrowser({ selected, onSelect }: Props) {
       .then((data: { path: string; entries: FileEntry[] }) => {
         setEntries(data.entries)
       })
-      .catch((e: unknown) => { setError(e instanceof Error ? e.message : String(e)); })
-      .finally(() => { setLoading(false); })
+      .catch((e: unknown) => {
+        setError(e instanceof Error ? e.message : String(e))
+      })
+      .finally(() => {
+        setLoading(false)
+      })
   }, [path, authFetch])
 
   const segments = path ? path.split("/") : []
@@ -50,7 +54,12 @@ export function ConfigFileBrowser({ selected, onSelect }: Props) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-1 text-xs font-mono flex-wrap opacity-70">
-        <button className="hover:opacity-100 hover:underline" onClick={() => { navigate(""); }}>
+        <button
+          className="hover:opacity-100 hover:underline"
+          onClick={() => {
+            navigate("")
+          }}
+        >
           /
         </button>
         {segments.map((seg, i) => (
@@ -58,7 +67,9 @@ export function ConfigFileBrowser({ selected, onSelect }: Props) {
             {i > 0 && <span>/</span>}
             <button
               className="hover:opacity-100 hover:underline"
-              onClick={() => { navigate(segments.slice(0, i + 1).join("/")); }}
+              onClick={() => {
+                navigate(segments.slice(0, i + 1).join("/"))
+              }}
             >
               {seg}
             </button>
@@ -82,7 +93,9 @@ export function ConfigFileBrowser({ selected, onSelect }: Props) {
                 {entry.type === "dir" ? (
                   <button
                     className="w-full text-left px-3 py-2 hover:bg-base-200 flex items-center gap-2 text-sm font-mono"
-                    onClick={() => { navigate(entry.rel_path); }}
+                    onClick={() => {
+                      navigate(entry.rel_path)
+                    }}
                   >
                     <span className="opacity-40 text-xs">▶</span>
                     {entry.name}
@@ -95,7 +108,9 @@ export function ConfigFileBrowser({ selected, onSelect }: Props) {
                         ? "bg-primary/15 text-primary"
                         : "hover:bg-base-200"
                     }`}
-                    onClick={() => { onSelect(entry.rel_path) }}
+                    onClick={() => {
+                      onSelect(entry.rel_path)
+                    }}
                   >
                     <span className="opacity-40 text-xs">—</span>
                     {entry.name}

@@ -3,15 +3,25 @@ import { useLocalStorage } from "../hooks/useLocalStorage"
 import { useLocation } from "react-router-dom"
 import { useAppDispatch, useAppSelector } from "../app/hooks"
 import type { RootState } from "../app/store"
-import { clearLogEntries, type LogEntry } from "../features/openrvdas/openrvdasSlice"
+import {
+  clearLogEntries,
+  type LogEntry,
+} from "../features/openrvdas/openrvdasSlice"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faPause, faPlay, faTrashCan, faArrowUpRightFromSquare, faExpand, faCompress } from "@fortawesome/free-solid-svg-icons"
+import {
+  faPause,
+  faPlay,
+  faTrashCan,
+  faArrowUpRightFromSquare,
+  faExpand,
+  faCompress,
+} from "@fortawesome/free-solid-svg-icons"
 
 const LEVEL_CLASS: Record<string, string> = {
-  DEBUG:    "opacity-40",
-  INFO:     "",
-  WARNING:  "text-warning",
-  ERROR:    "text-error",
+  DEBUG: "opacity-40",
+  INFO: "",
+  WARNING: "text-warning",
+  ERROR: "text-error",
   CRITICAL: "text-error font-bold",
 }
 
@@ -19,10 +29,10 @@ const MIN_LEVEL_OPTIONS = ["DEBUG", "INFO", "WARNING", "ERROR"] as const
 type MinLevel = (typeof MIN_LEVEL_OPTIONS)[number]
 
 const LEVEL_NO: Record<MinLevel, number> = {
-  DEBUG:   10,
-  INFO:    20,
+  DEBUG: 10,
+  INFO: 20,
   WARNING: 30,
-  ERROR:   40,
+  ERROR: 40,
 }
 
 export function formatTs(ts: number): string {
@@ -37,8 +47,16 @@ export function EntryRow({ entry }: { entry: LogEntry }) {
   const cls = LEVEL_CLASS[entry.levelname] ?? ""
   return (
     <div className={`flex gap-2 font-mono leading-snug py-0.5 ${cls}`}>
-      <span className="shrink-0 opacity-50 truncate" style={{ width: "6em" }}>{formatTs(entry.timestamp)}</span>
-      <span className="shrink-0 opacity-60 truncate" style={{ width: "10em" }} title={entry.source}>{entry.source}</span>
+      <span className="shrink-0 opacity-50 truncate" style={{ width: "6em" }}>
+        {formatTs(entry.timestamp)}
+      </span>
+      <span
+        className="shrink-0 opacity-60 truncate"
+        style={{ width: "10em" }}
+        title={entry.source}
+      >
+        {entry.source}
+      </span>
       <span className="break-all">{entry.message}</span>
     </div>
   )
@@ -56,7 +74,9 @@ export function LogPanel({
   const dispatch = useAppDispatch()
   const { pathname } = useLocation()
   const entries = useAppSelector((s: RootState) => s.openrvdas.logEntries)
-  const loggerIds = useAppSelector((s: RootState) => s.openrvdas.loggers.map(l => l.id))
+  const loggerIds = useAppSelector((s: RootState) =>
+    s.openrvdas.loggers.map(l => l.id),
+  )
   const [minLevel, setMinLevel] = useState<MinLevel>("INFO")
   const [source, setSource] = useState<string>("all")
   const [messageFilter, setMessageFilter] = useState("")
@@ -130,28 +150,38 @@ export function LogPanel({
               max={16}
               step={1}
               value={fontSize}
-              onChange={e => { setFontSize(Number(e.target.value)); }}
+              onChange={e => {
+                setFontSize(Number(e.target.value))
+              }}
               className="range range-xs w-32 opacity-60 hover:opacity-100"
               title="Font size"
             />
             <select
               className="select select-xs select-bordered"
               value={minLevel}
-              onChange={e => { setMinLevel(e.target.value as MinLevel); }}
+              onChange={e => {
+                setMinLevel(e.target.value as MinLevel)
+              }}
             >
               {MIN_LEVEL_OPTIONS.map(l => (
-                <option key={l} value={l}>{l}</option>
+                <option key={l} value={l}>
+                  {l}
+                </option>
               ))}
             </select>
             <select
               className="select select-xs select-bordered font-mono"
               value={source}
-              onChange={e => { setSource(e.target.value); }}
+              onChange={e => {
+                setSource(e.target.value)
+              }}
             >
               <option value="all">all sources</option>
               <option value="logger_manager">logger_manager</option>
               {loggerIds.map(id => (
-                <option key={id} value={id}>{id}</option>
+                <option key={id} value={id}>
+                  {id}
+                </option>
               ))}
             </select>
             <input
@@ -159,7 +189,9 @@ export function LogPanel({
               className="input input-xs input-bordered font-mono w-40"
               placeholder="filter messages…"
               value={messageFilter}
-              onChange={e => { setMessageFilter(e.target.value); }}
+              onChange={e => {
+                setMessageFilter(e.target.value)
+              }}
             />
             <button
               className={`btn btn-xs ${paused ? "btn-warning" : "btn-ghost opacity-60 hover:opacity-100"}`}
@@ -178,7 +210,9 @@ export function LogPanel({
             {onExpandedChange && (
               <button
                 className="btn btn-xs btn-ghost opacity-60 hover:opacity-100"
-                onClick={() => { onExpandedChange(!expanded); }}
+                onClick={() => {
+                  onExpandedChange(!expanded)
+                }}
                 title={expanded ? "Collapse" : "Expand to full screen"}
               >
                 <FontAwesomeIcon icon={expanded ? faCompress : faExpand} />

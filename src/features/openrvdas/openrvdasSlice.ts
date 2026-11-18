@@ -80,7 +80,10 @@ export const openrvdasSlice = createSlice({
     clearLoadConfigError(state) {
       state.loadConfigError = null
     },
-    setLoggerStatuses(state, action: PayloadAction<Record<string, LoggerStatus>>) {
+    setLoggerStatuses(
+      state,
+      action: PayloadAction<Record<string, LoggerStatus>>,
+    ) {
       state.loggerStatuses = { ...state.loggerStatuses, ...action.payload }
     },
     clearLoggerStatuses(state) {
@@ -99,17 +102,24 @@ export const openrvdasSlice = createSlice({
       // until the supervisor's "Called start_logger" message arrives so that
       // the server-side CDS timestamp is used as the boundary (no clock skew).
       state.loggers.forEach(logger => {
-        const newConfig = logger.configs.find(c => targetMode.configs.includes(c))
+        const newConfig = logger.configs.find(c =>
+          targetMode.configs.includes(c),
+        )
         if (newConfig !== undefined) logger.active_config = newConfig
       })
     },
     addLogEntries(state, action: PayloadAction<LogEntry[]>) {
-      state.logEntries = [...state.logEntries, ...action.payload].slice(-MAX_LOG_ENTRIES)
+      state.logEntries = [...state.logEntries, ...action.payload].slice(
+        -MAX_LOG_ENTRIES,
+      )
       for (const entry of action.payload) {
         // Skip entries older than the last supervisor-acknowledged reconfiguration
         // for this source, so history re-delivered after a reconnect doesn't
         // resurrect indicators from before the last config change.
-        if (entry.timestamp <= (state.loggerLastLevelClearedAt[entry.source] ?? 0)) continue
+        if (
+          entry.timestamp <= (state.loggerLastLevelClearedAt[entry.source] ?? 0)
+        )
+          continue
 
         // When the supervisor starts a logger with its new config, use the CDS
         // timestamp of that message as the clear boundary for that logger.
@@ -122,7 +132,10 @@ export const openrvdasSlice = createSlice({
           }
         }
 
-        state.loggerLastLevel[entry.source] = { levelname: entry.levelname, levelno: entry.levelno }
+        state.loggerLastLevel[entry.source] = {
+          levelname: entry.levelname,
+          levelno: entry.levelno,
+        }
       }
     },
     clearLogEntries(state) {
@@ -153,7 +166,7 @@ export const openrvdasSlice = createSlice({
       })
       .addCase(fetchModesThunk.rejected, (state, action) => {
         state.loading = false
-        state.error = (action.payload) ?? "Failed to fetch modes"
+        state.error = action.payload ?? "Failed to fetch modes"
       })
       .addCase(fetchLoggersThunk.fulfilled, (state, action) => {
         state.loggers = action.payload
@@ -193,7 +206,8 @@ export const openrvdasSlice = createSlice({
       })
       .addCase(loadConfigurationThunk.rejected, (state, action) => {
         state.loadingConfig = false
-        state.loadConfigError = action.error.message ?? "Failed to load configuration"
+        state.loadConfigError =
+          action.error.message ?? "Failed to load configuration"
       })
   },
 })

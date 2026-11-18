@@ -33,9 +33,7 @@ type LogEntry = {
 }
 
 function toWsBase(): string {
-  return AppConfig.apiBaseUrl
-    .replace(/^https/, "wss")
-    .replace(/^http/, "ws")
+  return AppConfig.apiBaseUrl.replace(/^https/, "wss").replace(/^http/, "ws")
 }
 
 let nextId = 0
@@ -47,7 +45,10 @@ function readerLabel(reader: ImportReader): string {
   const cls = typeof reader.class === "string" ? reader.class : "Unknown"
   const kwargs = reader.kwargs as Record<string, unknown> | undefined
   if (!kwargs) return cls
-  const summary = Object.entries(kwargs).slice(0, 2).map(([k, v]) => `${k}: ${String(v)}`).join(", ")
+  const summary = Object.entries(kwargs)
+    .slice(0, 2)
+    .map(([k, v]) => `${k}: ${String(v)}`)
+    .join(", ")
   return summary ? `${cls} — ${summary}` : cls
 }
 
@@ -55,8 +56,15 @@ export const TestConnectionPage = (): JSX.Element => {
   const token = useAppSelector((state: RootState) => state.auth.token)
   const { authFetch, freshToken } = useAuthFetch()
 
-  const [activeTemplate, setActiveTemplate] = useState(() => localStorage.getItem("testConnection.activeTemplate") ?? "Serial Port")
-  const [configYaml, setConfigYaml] = useState(() => localStorage.getItem("testConnection.configYaml") ?? TEMPLATES["Serial Port"])
+  const [activeTemplate, setActiveTemplate] = useState(
+    () =>
+      localStorage.getItem("testConnection.activeTemplate") ?? "Serial Port",
+  )
+  const [configYaml, setConfigYaml] = useState(
+    () =>
+      localStorage.getItem("testConnection.configYaml") ??
+      TEMPLATES["Serial Port"],
+  )
   const [running, setRunning] = useState(false)
   const [log, setLog] = useState<LogEntry[]>([])
 
@@ -66,10 +74,14 @@ export const TestConnectionPage = (): JSX.Element => {
 
   const importRef = useRef<HTMLDialogElement>(null)
   const [importStep, setImportStep] = useState<"select" | "reader">("select")
-  const [importLoggers, setImportLoggers] = useState<ImportLogger[] | null>(null)
+  const [importLoggers, setImportLoggers] = useState<ImportLogger[] | null>(
+    null,
+  )
   const [importLoading, setImportLoading] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
-  const [importSelectedConfig, setImportSelectedConfig] = useState<string | null>(null)
+  const [importSelectedConfig, setImportSelectedConfig] = useState<
+    string | null
+  >(null)
   const [importReaders, setImportReaders] = useState<ImportReader[]>([])
 
   useEffect(() => {
@@ -97,9 +109,15 @@ export const TestConnectionPage = (): JSX.Element => {
     importRef.current?.showModal()
     authFetch("/loggers/")
       .then(r => r.json())
-      .then((data: ImportLogger[]) => { setImportLoggers(data); })
-      .catch(() => { setImportError("Failed to load loggers"); })
-      .finally(() => { setImportLoading(false); })
+      .then((data: ImportLogger[]) => {
+        setImportLoggers(data)
+      })
+      .catch(() => {
+        setImportError("Failed to load loggers")
+      })
+      .finally(() => {
+        setImportLoading(false)
+      })
   }
 
   const applyReader = (reader: ImportReader) => {
@@ -117,8 +135,13 @@ export const TestConnectionPage = (): JSX.Element => {
     authFetch(`/configs/${encodeURIComponent(configId)}`)
       .then(r => r.json())
       .then((d: { config_json?: string }) => {
-        const parsed = JSON.parse(d.config_json ?? "{}") as Record<string, unknown>
-        const readers = Array.isArray(parsed.readers) ? (parsed.readers as ImportReader[]) : []
+        const parsed = JSON.parse(d.config_json ?? "{}") as Record<
+          string,
+          unknown
+        >
+        const readers = Array.isArray(parsed.readers)
+          ? (parsed.readers as ImportReader[])
+          : []
         if (readers.length === 0) {
           setImportError(`No readers found in "${configId}"`)
         } else {
@@ -133,19 +156,32 @@ export const TestConnectionPage = (): JSX.Element => {
           }
         }
       })
-      .catch(() => { setImportError(`Failed to load config "${configId}"`); })
-      .finally(() => { setImportLoading(false); })
+      .catch(() => {
+        setImportError(`Failed to load config "${configId}"`)
+      })
+      .finally(() => {
+        setImportLoading(false)
+      })
   }
 
   const start = useCallback(() => {
-    if (!token) { appendEntry("error", "Not authenticated"); return }
+    if (!token) {
+      appendEntry("error", "Not authenticated")
+      return
+    }
 
     stoppedRef.current = false
     setRunning(true)
 
     void freshToken().then(currentToken => {
-      if (!currentToken) { appendEntry("error", "Not authenticated"); setRunning(false); return }
-      const ws = new WebSocket(`${toWsBase()}/api/v1/ws/test-connection?token=${currentToken}`)
+      if (!currentToken) {
+        appendEntry("error", "Not authenticated")
+        setRunning(false)
+        return
+      }
+      const ws = new WebSocket(
+        `${toWsBase()}/api/v1/ws/test-connection?token=${currentToken}`,
+      )
       wsRef.current = ws
 
       ws.onopen = () => {
@@ -154,7 +190,11 @@ export const TestConnectionPage = (): JSX.Element => {
 
       ws.onmessage = (event: MessageEvent) => {
         try {
-          const msg = JSON.parse(event.data as string) as { type: string; data?: string; message?: string }
+          const msg = JSON.parse(event.data as string) as {
+            type: string
+            data?: string
+            message?: string
+          }
           if (msg.type === "record") {
             appendEntry("record", msg.data ?? "")
           } else if (msg.type === "status") {
@@ -174,7 +214,11 @@ export const TestConnectionPage = (): JSX.Element => {
         }
       }
 
-      ws.onerror = () => { appendEntry("error", "WebSocket error"); setRunning(false); wsRef.current = null }
+      ws.onerror = () => {
+        appendEntry("error", "WebSocket error")
+        setRunning(false)
+        wsRef.current = null
+      }
 
       ws.onclose = () => {
         if (!stoppedRef.current) appendEntry("status", "Connection closed")
@@ -188,7 +232,12 @@ export const TestConnectionPage = (): JSX.Element => {
     wsRef.current?.send(JSON.stringify({ action: "stop" }))
   }, [])
 
-  useEffect(() => () => { wsRef.current?.close() }, [])
+  useEffect(
+    () => () => {
+      wsRef.current?.close()
+    },
+    [],
+  )
 
   const kindClass = (kind: LogEntry["kind"]) =>
     kind === "error" ? "text-error" : kind === "status" ? "text-info" : ""
@@ -199,7 +248,6 @@ export const TestConnectionPage = (): JSX.Element => {
 
       <div className="card bg-base-200 shadow-sm border border-base-300">
         <div className="card-body py-4 px-5 space-y-4">
-
           {/* Template picker */}
           <div className="form-control">
             <label className="label">
@@ -211,7 +259,9 @@ export const TestConnectionPage = (): JSX.Element => {
                   key={name}
                   type="button"
                   className={`btn btn-sm ${activeTemplate === name ? "btn-primary" : "btn-ghost border border-base-300"}`}
-                  onClick={() => { selectTemplate(name); }}
+                  onClick={() => {
+                    selectTemplate(name)
+                  }}
                   disabled={running}
                 >
                   {name}
@@ -231,12 +281,20 @@ export const TestConnectionPage = (): JSX.Element => {
           {/* YAML editor */}
           <div className="form-control">
             <label className="label">
-              <span className="label-text font-medium">Reader config (YAML)</span>
+              <span className="label-text font-medium">
+                Reader config (YAML)
+              </span>
             </label>
             <textarea
               className="textarea textarea-bordered font-mono text-sm h-36 resize-y"
               value={configYaml}
-              onChange={e => { setConfigYaml(e.target.value); localStorage.setItem("testConnection.configYaml", e.target.value) }}
+              onChange={e => {
+                setConfigYaml(e.target.value)
+                localStorage.setItem(
+                  "testConnection.configYaml",
+                  e.target.value,
+                )
+              }}
               disabled={running}
               spellCheck={false}
             />
@@ -245,18 +303,28 @@ export const TestConnectionPage = (): JSX.Element => {
           {/* Controls */}
           <div className="flex items-center gap-3 pt-1">
             {!running ? (
-              <button type="button" className="btn btn-primary btn-sm" onClick={start}>
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={start}
+              >
                 Start
               </button>
             ) : (
-              <button type="button" className="btn btn-error btn-sm" onClick={stop}>
+              <button
+                type="button"
+                className="btn btn-error btn-sm"
+                onClick={stop}
+              >
                 Stop
               </button>
             )}
             <button
               type="button"
               className="btn btn-ghost btn-sm"
-              onClick={() => { setLog([]); }}
+              onClick={() => {
+                setLog([])
+              }}
               disabled={running}
             >
               Clear log
@@ -274,12 +342,20 @@ export const TestConnectionPage = (): JSX.Element => {
       {/* Live log */}
       <div className="card bg-base-200 shadow-sm border border-base-300">
         <div className="card-body py-3 px-4">
-          <div ref={logScrollRef} className="font-mono text-sm h-80 overflow-y-auto space-y-0.5">
+          <div
+            ref={logScrollRef}
+            className="font-mono text-sm h-80 overflow-y-auto space-y-0.5"
+          >
             {log.length === 0 && (
-              <p className="text-base-content/40 italic text-xs">No records yet.</p>
+              <p className="text-base-content/40 italic text-xs">
+                No records yet.
+              </p>
             )}
             {log.map(entry => (
-              <div key={entry.id} className={`leading-snug ${kindClass(entry.kind)}`}>
+              <div
+                key={entry.id}
+                className={`leading-snug ${kindClass(entry.kind)}`}
+              >
                 <span className="opacity-40 mr-2 text-xs">{entry.ts}</span>
                 {entry.text}
               </div>
@@ -292,7 +368,9 @@ export const TestConnectionPage = (): JSX.Element => {
       <dialog ref={importRef} className="modal">
         <div className="modal-box max-w-lg flex flex-col max-h-[80vh]">
           <h3 className="font-bold text-lg mb-4 shrink-0">
-            {importStep === "select" ? "Import Reader from Config" : "Select Reader"}
+            {importStep === "select"
+              ? "Import Reader from Config"
+              : "Select Reader"}
           </h3>
 
           {importLoading ? (
@@ -317,7 +395,9 @@ export const TestConnectionPage = (): JSX.Element => {
                         key={configId}
                         type="button"
                         className="btn btn-xs btn-ghost border border-base-300 font-mono"
-                        onClick={() => { selectConfig(configId); }}
+                        onClick={() => {
+                          selectConfig(configId)
+                        }}
                       >
                         {configId}
                       </button>
@@ -328,13 +408,17 @@ export const TestConnectionPage = (): JSX.Element => {
             </div>
           ) : (
             <div className="flex-1 overflow-y-auto min-h-0 space-y-2">
-              <p className="text-xs opacity-60 font-mono mb-3">{importSelectedConfig}</p>
+              <p className="text-xs opacity-60 font-mono mb-3">
+                {importSelectedConfig}
+              </p>
               {importReaders.map((reader, i) => (
                 <button
                   key={i}
                   type="button"
                   className="btn btn-sm btn-ghost border border-base-300 w-full justify-start font-mono text-left normal-case"
-                  onClick={() => { applyReader(reader); }}
+                  onClick={() => {
+                    applyReader(reader)
+                  }}
                 >
                   {readerLabel(reader)}
                 </button>
@@ -347,7 +431,10 @@ export const TestConnectionPage = (): JSX.Element => {
               <button
                 type="button"
                 className="btn btn-ghost btn-sm mr-auto"
-                onClick={() => { setImportStep("select"); setImportError(null); }}
+                onClick={() => {
+                  setImportStep("select")
+                  setImportError(null)
+                }}
               >
                 ← Back
               </button>

@@ -72,7 +72,9 @@ export const App = () => {
   useLoggerStateWS()
 
   useEffect(() => {
-    document.title = version ? `${AppConfig.project} v${version}` : AppConfig.project
+    document.title = version
+      ? `${AppConfig.project} v${version}`
+      : AppConfig.project
   }, [version])
 
   useEffect(() => {
@@ -117,8 +119,14 @@ export const App = () => {
           </Route>
 
           <Route element={<RequireAuth />}>
-            <Route path="/tools/template-builder" element={<TemplateBuilderPage />} />
-            <Route path="/tools/test-connection" element={<TestConnectionPage />} />
+            <Route
+              path="/tools/template-builder"
+              element={<TemplateBuilderPage />}
+            />
+            <Route
+              path="/tools/test-connection"
+              element={<TestConnectionPage />}
+            />
             <Route path="/tools/verify-parser" element={<VerifyParserPage />} />
           </Route>
 

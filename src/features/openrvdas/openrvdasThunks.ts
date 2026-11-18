@@ -25,7 +25,9 @@ export type Logger = {
 }
 
 export const fetchCruiseThunk = createAsyncThunk<
-  Cruise, undefined, { dispatch: AppDispatch; state: RootState; rejectValue: string }
+  Cruise,
+  undefined,
+  { dispatch: AppDispatch; state: RootState; rejectValue: string }
 >("openrvdas/fetchCruise", async (_, thunkAPI) => {
   try {
     const res = await fetchWithAuth("/cruise/", {}, thunkAPI)
@@ -37,7 +39,9 @@ export const fetchCruiseThunk = createAsyncThunk<
 })
 
 export const fetchModesThunk = createAsyncThunk<
-  Mode[], undefined, { dispatch: AppDispatch; state: RootState; rejectValue: string }
+  Mode[],
+  undefined,
+  { dispatch: AppDispatch; state: RootState; rejectValue: string }
 >("openrvdas/fetchModes", async (_, thunkAPI) => {
   try {
     const res = await fetchWithAuth("/modes/", {}, thunkAPI)
@@ -49,7 +53,9 @@ export const fetchModesThunk = createAsyncThunk<
 })
 
 export const fetchLoggersThunk = createAsyncThunk<
-  Logger[], undefined, { dispatch: AppDispatch; state: RootState; rejectValue: string }
+  Logger[],
+  undefined,
+  { dispatch: AppDispatch; state: RootState; rejectValue: string }
 >("openrvdas/fetchLoggers", async (_, thunkAPI) => {
   try {
     const res = await fetchWithAuth("/loggers/", {}, thunkAPI)
@@ -77,8 +83,10 @@ export const previewConfigurationThunk = createAsyncThunk<
     thunkAPI,
   )
   if (!res.ok) {
-    const data = await res.json().catch(() => ({})) as { detail?: string }
-    return thunkAPI.rejectWithValue(data.detail ?? "Failed to preview configuration")
+    const data = (await res.json().catch(() => ({}))) as { detail?: string }
+    return thunkAPI.rejectWithValue(
+      data.detail ?? "Failed to preview configuration",
+    )
   }
   return res.json() as Promise<ConfigPreview>
 })
@@ -94,7 +102,7 @@ export const loadConfigurationThunk = createAsyncThunk<
     thunkAPI,
   )
   if (!res.ok) {
-    const data = await res.json().catch(() => ({})) as { detail?: string }
+    const data = (await res.json().catch(() => ({}))) as { detail?: string }
     throw new Error(data.detail ?? "Failed to load configuration")
   }
   await thunkAPI.dispatch(fetchCruiseThunk())
