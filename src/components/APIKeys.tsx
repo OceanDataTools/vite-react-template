@@ -41,9 +41,11 @@ type CreateKeyFormValues = {
 
 const ApiKeys = () => {
   const dispatch = useAppDispatch()
-  const { keys, routes: allRoutes } = useAppSelector(
-    (state: RootState) => state.apikeys,
-  )
+  const {
+    keys,
+    routes: allRoutes,
+    routesError,
+  } = useAppSelector((state: RootState) => state.apikeys)
 
   const { toast, setToast } = useToast()
   const [keyToDelete, setKeyToDelete] = useState<string | null>(null)
@@ -329,6 +331,7 @@ const ApiKeys = () => {
           isOpen
           mode="create"
           routes={allRoutes}
+          routesError={routesError}
           initialValues={selectedKey ?? undefined}
           onSubmitForm={handleCreateKey}
           onClose={() => {

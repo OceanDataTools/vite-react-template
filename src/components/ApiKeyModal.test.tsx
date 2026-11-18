@@ -7,12 +7,15 @@ const routes = [
   { name: "items", route: "/api/v1/items", methods: ["GET", "POST"] },
 ]
 
-const renderModal = () =>
+const renderModal = (
+  props: Partial<React.ComponentProps<typeof ApiKeyModal>> = {},
+) =>
   render(
     <ApiKeyModal
       isOpen
       onClose={vi.fn()}
       routes={routes}
+      {...props}
       onSubmitForm={vi.fn(() => Promise.resolve(true))}
     />,
   )
@@ -97,5 +100,30 @@ describe("ApiKeyModal", () => {
     )
 
     expect(submit).toBeEnabled()
+  })
+
+  it("explains an empty route list instead of showing select-all", () => {
+    renderModal({ routes: [] })
+
+    expect(screen.getByText("No routes accept API keys.")).toBeInTheDocument()
+    expect(
+      screen.queryByRole("checkbox", { name: "Select all" }),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Create" })).toBeDisabled()
+  })
+
+  it("shows the error when routes failed to load", () => {
+    renderModal({ routes: [], routesError: "Internal Server Error" })
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Couldn't load routes: Internal Server Error",
+    )
+    expect(
+      screen.queryByText("No routes accept API keys."),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("checkbox", { name: "Select all" }),
+    ).not.toBeInTheDocument()
   })
 })
