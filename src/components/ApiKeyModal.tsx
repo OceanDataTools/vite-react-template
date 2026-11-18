@@ -48,6 +48,8 @@ type Props = {
   initialValues?: CreateKeySubmit & { id?: string }
   mode?: "create" | "reissue"
   routes: Permission[]
+  /** Set when the list of key-assignable routes failed to load. */
+  routesError?: string | null
   onSubmitForm: (data: CreateKeySubmit & { id?: string }) => Promise<boolean>
 }
 
@@ -57,6 +59,7 @@ const ApiKeyModal = ({
   initialValues,
   mode = "create",
   routes,
+  routesError = null,
   onSubmitForm,
 }: Props) => {
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -212,55 +215,70 @@ const ApiKeyModal = ({
                 Permissions cannot be changed.
               </p>
             )}
-            <div className="border rounded">
-              {mode === "create" && (
-                <label className="label cursor-pointer text-sm px-2 py-1 border-b">
-                  <input
-                    ref={selectAllRef}
-                    type="checkbox"
-                    className="checkbox checkbox-sm"
-                    checked={allSelected}
-                    onChange={toggleAll}
-                  />
-                  <span className="label-text ml-2 font-medium">
-                    Select all
-                  </span>
-                </label>
-              )}
-              <div className="max-h-48 overflow-auto p-2">
-                {routes.map(({ route, methods, name }) => (
-                  <div key={name} className="mb-2">
-                    {methods.map(method => (
-                      <label
-                        key={method}
-                        className="label cursor-pointer text-sm"
-                      >
-                        <Controller
-                          name="permissions"
-                          control={control}
-                          render={() => (
-                            <input
-                              type="checkbox"
-                              className="checkbox checkbox-sm"
-                              checked={watchedPermissions.some(
-                                p => p.route === route && p.method === method,
-                              )}
-                              onChange={() => {
-                                togglePermission(route, method)
-                              }}
-                              disabled={mode === "reissue"}
-                            />
-                          )}
-                        />
-                        <span className="label-text mr-2">
-                          {method} {route}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                ))}
+            {mode === "create" && routesError && (
+              <div
+                role="alert"
+                className="alert alert-error alert-soft text-sm"
+              >
+                Couldn't load routes: {routesError}
               </div>
-            </div>
+            )}
+            {mode === "create" && !routesError && routes.length === 0 && (
+              <p className="text-sm text-base-content/70">
+                No routes accept API keys.
+              </p>
+            )}
+            {routes.length > 0 && (
+              <div className="border rounded">
+                {mode === "create" && (
+                  <label className="label cursor-pointer text-sm px-2 py-1 border-b">
+                    <input
+                      ref={selectAllRef}
+                      type="checkbox"
+                      className="checkbox checkbox-sm"
+                      checked={allSelected}
+                      onChange={toggleAll}
+                    />
+                    <span className="label-text ml-2 font-medium">
+                      Select all
+                    </span>
+                  </label>
+                )}
+                <div className="max-h-48 overflow-auto p-2">
+                  {routes.map(({ route, methods, name }) => (
+                    <div key={name} className="mb-2">
+                      {methods.map(method => (
+                        <label
+                          key={method}
+                          className="label cursor-pointer text-sm"
+                        >
+                          <Controller
+                            name="permissions"
+                            control={control}
+                            render={() => (
+                              <input
+                                type="checkbox"
+                                className="checkbox checkbox-sm"
+                                checked={watchedPermissions.some(
+                                  p => p.route === route && p.method === method,
+                                )}
+                                onChange={() => {
+                                  togglePermission(route, method)
+                                }}
+                                disabled={mode === "reissue"}
+                              />
+                            )}
+                          />
+                          <span className="label-text mr-2">
+                            {method} {route}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </fieldset>
 
           {/* Actions */}
