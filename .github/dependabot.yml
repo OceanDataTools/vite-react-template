@@ -12,6 +12,22 @@ updates:
       fortawesome:
         patterns:
           - "@fortawesome/*"
+      # react and react-dom must be the exact same version at runtime, so
+      # bumping them in separate PRs fails tests in each.
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+    ignore:
+      # Types should track the Node major used by CI (.github/workflows/ci.yml).
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      # eslint-plugin-react doesn't support ESLint 10 yet (peer: eslint ^9.7).
+      # Remove once it does.
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /

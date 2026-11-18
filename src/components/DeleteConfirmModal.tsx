@@ -40,7 +40,9 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
           </button>
         </div>
       </div>
-      <form method="dialog" className="modal-backdrop"><button>close</button></form>
+      <form method="dialog" className="modal-backdrop">
+        <button>close</button>
+      </form>
     </dialog>
   )
 }

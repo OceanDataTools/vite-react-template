@@ -7,7 +7,9 @@ export function debounce<TArgs extends unknown[], TReturn>(
     new Promise((resolve, reject) => {
       clearTimeout(timer)
       timer = setTimeout(() => {
-        fn(...args).then(resolve).catch(reject)
+        fn(...args)
+          .then(resolve)
+          .catch(reject)
       }, delay)
     })
 }

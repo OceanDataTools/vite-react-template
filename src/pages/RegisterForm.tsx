@@ -11,17 +11,27 @@ import { debounce } from "../utils/debounce"
 import { useToast } from "../hooks/useToast"
 import Toast from "../components/Toast"
 
-const checkUsernameAvailability = debounce(async (username: string): Promise<{ available: boolean }> => {
-  const res = await fetch(apiUrl(`/users/available?username=${encodeURIComponent(username)}`))
-  if (!res.ok) throw new Error("SERVER_ERROR")
-  return res.json() as Promise<{ available: boolean }>
-}, 400)
+const checkUsernameAvailability = debounce(
+  async (username: string): Promise<{ available: boolean }> => {
+    const res = await fetch(
+      apiUrl(`/users/available?username=${encodeURIComponent(username)}`),
+    )
+    if (!res.ok) throw new Error("SERVER_ERROR")
+    return res.json() as Promise<{ available: boolean }>
+  },
+  400,
+)
 
-const checkEmailAvailability = debounce(async (email: string): Promise<{ available: boolean }> => {
-  const res = await fetch(apiUrl(`/users/available?email=${encodeURIComponent(email)}`))
-  if (!res.ok) throw new Error("SERVER_ERROR")
-  return res.json() as Promise<{ available: boolean }>
-}, 400)
+const checkEmailAvailability = debounce(
+  async (email: string): Promise<{ available: boolean }> => {
+    const res = await fetch(
+      apiUrl(`/users/available?email=${encodeURIComponent(email)}`),
+    )
+    if (!res.ok) throw new Error("SERVER_ERROR")
+    return res.json() as Promise<{ available: boolean }>
+  },
+  400,
+)
 
 const registerSchema = z
   .object({
@@ -35,23 +45,45 @@ const registerSchema = z
     if (data.username) {
       try {
         const json = await checkUsernameAvailability(data.username)
-        if (!json.available) ctx.addIssue({ code: "custom", path: ["username"], message: "Username is already taken" })
+        if (!json.available)
+          ctx.addIssue({
+            code: "custom",
+            path: ["username"],
+            message: "Username is already taken",
+          })
       } catch {
-        ctx.addIssue({ code: "custom", path: ["username"], message: "Could not validate username" })
+        ctx.addIssue({
+          code: "custom",
+          path: ["username"],
+          message: "Could not validate username",
+        })
       }
     }
 
     if (data.email) {
       try {
         const json = await checkEmailAvailability(data.email)
-        if (!json.available) ctx.addIssue({ code: "custom", path: ["email"], message: "Email is already taken" })
+        if (!json.available)
+          ctx.addIssue({
+            code: "custom",
+            path: ["email"],
+            message: "Email is already taken",
+          })
       } catch {
-        ctx.addIssue({ code: "custom", path: ["email"], message: "Could not validate email" })
+        ctx.addIssue({
+          code: "custom",
+          path: ["email"],
+          message: "Could not validate email",
+        })
       }
     }
 
     if (data.password !== data.confirmPassword) {
-      ctx.addIssue({ code: "custom", path: ["confirmPassword"], message: "Passwords do not match" })
+      ctx.addIssue({
+        code: "custom",
+        path: ["confirmPassword"],
+        message: "Passwords do not match",
+      })
     }
   })
 
@@ -74,60 +106,116 @@ export const RegisterForm = (): JSX.Element => {
 
   const onSubmit = async (data: RegisterFormValues) => {
     try {
-      const result = await dispatch(registerUserThunk({ ...data, full_name: data.full_name ?? "" }))
+      const result = await dispatch(
+        registerUserThunk({ ...data, full_name: data.full_name ?? "" }),
+      )
       if (registerUserThunk.fulfilled.match(result)) {
-        setToast({ message: "Registration successful! Redirecting…", type: "success" })
+        setToast({
+          message: "Registration successful! Redirecting…",
+          type: "success",
+        })
         setTimeout(() => void navigate("/login"), 2000)
       } else {
-        setToast({ message: "Registration failed. Please try again.", type: "error" })
+        setToast({
+          message: "Registration failed. Please try again.",
+          type: "error",
+        })
       }
     } catch (err) {
-      setToast({ message: err instanceof Error ? err.message : "Registration failed.", type: "error" })
+      setToast({
+        message: err instanceof Error ? err.message : "Registration failed.",
+        type: "error",
+      })
     }
   }
 
   return (
     <>
-    <div className="max-w-sm mx-auto mt-10">
-      <div className="card bg-base-200 shadow-sm border border-base-300">
-      <div className="card-body py-4 px-5">
-      <h2 className="card-title text-base font-semibold mb-2">Register</h2>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <fieldset className="fieldset">
-          <legend className="fieldset-legend">Username</legend>
-          <input type="text" {...register("username")} className={`input w-full ${errors.username ? "input-error" : ""}`} />
-          {errors.username && <p className="text-error text-sm mt-1">{errors.username.message}</p>}
-        </fieldset>
-        <fieldset className="fieldset">
-          <legend className="fieldset-legend">Full Name</legend>
-          <input type="text" {...register("full_name")} className="input w-full" />
-        </fieldset>
-        <fieldset className="fieldset">
-          <legend className="fieldset-legend">Email</legend>
-          <input type="email" {...register("email")} className={`input w-full ${errors.email ? "input-error" : ""}`} />
-          {errors.email && <p className="text-error text-sm mt-1">{errors.email.message}</p>}
-        </fieldset>
-        <fieldset className="fieldset">
-          <legend className="fieldset-legend">Password</legend>
-          <input type="password" {...register("password")} className={`input w-full ${errors.password ? "input-error" : ""}`} />
-          {errors.password && <p className="text-error text-sm mt-1">{errors.password.message}</p>}
-        </fieldset>
-        <fieldset className="fieldset">
-          <legend className="fieldset-legend">Confirm Password</legend>
-          <input type="password" {...register("confirmPassword")} className={`input w-full ${errors.confirmPassword ? "input-error" : ""}`} />
-          {errors.confirmPassword && <p className="text-error text-sm mt-1">{errors.confirmPassword.message}</p>}
-        </fieldset>
-        <button type="submit" className="btn btn-primary w-full mt-4" disabled={loading || isSubmitting || !isValid}>
-          {isSubmitting || loading ? "Registering..." : "Register"}
-        </button>
-        <Link to="/login" className="block mt-4 text-center text-sm hover:text-primary">
-          Already have an account?
-        </Link>
-      </form>
+      <div className="max-w-sm mx-auto mt-10">
+        <div className="card bg-base-200 shadow-sm border border-base-300">
+          <div className="card-body py-4 px-5">
+            <h2 className="card-title text-base font-semibold mb-2">
+              Register
+            </h2>
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <fieldset className="fieldset">
+                <legend className="fieldset-legend">Username</legend>
+                <input
+                  type="text"
+                  {...register("username")}
+                  className={`input w-full ${errors.username ? "input-error" : ""}`}
+                />
+                {errors.username && (
+                  <p className="text-error text-sm mt-1">
+                    {errors.username.message}
+                  </p>
+                )}
+              </fieldset>
+              <fieldset className="fieldset">
+                <legend className="fieldset-legend">Full Name</legend>
+                <input
+                  type="text"
+                  {...register("full_name")}
+                  className="input w-full"
+                />
+              </fieldset>
+              <fieldset className="fieldset">
+                <legend className="fieldset-legend">Email</legend>
+                <input
+                  type="email"
+                  {...register("email")}
+                  className={`input w-full ${errors.email ? "input-error" : ""}`}
+                />
+                {errors.email && (
+                  <p className="text-error text-sm mt-1">
+                    {errors.email.message}
+                  </p>
+                )}
+              </fieldset>
+              <fieldset className="fieldset">
+                <legend className="fieldset-legend">Password</legend>
+                <input
+                  type="password"
+                  {...register("password")}
+                  className={`input w-full ${errors.password ? "input-error" : ""}`}
+                />
+                {errors.password && (
+                  <p className="text-error text-sm mt-1">
+                    {errors.password.message}
+                  </p>
+                )}
+              </fieldset>
+              <fieldset className="fieldset">
+                <legend className="fieldset-legend">Confirm Password</legend>
+                <input
+                  type="password"
+                  {...register("confirmPassword")}
+                  className={`input w-full ${errors.confirmPassword ? "input-error" : ""}`}
+                />
+                {errors.confirmPassword && (
+                  <p className="text-error text-sm mt-1">
+                    {errors.confirmPassword.message}
+                  </p>
+                )}
+              </fieldset>
+              <button
+                type="submit"
+                className="btn btn-primary w-full mt-4"
+                disabled={loading || isSubmitting || !isValid}
+              >
+                {isSubmitting || loading ? "Registering..." : "Register"}
+              </button>
+              <Link
+                to="/login"
+                className="block mt-4 text-center text-sm hover:text-primary"
+              >
+                Already have an account?
+              </Link>
+            </form>
+          </div>
+        </div>
       </div>
-      </div>
-    </div>
-    <Toast toast={toast} />
+      <Toast toast={toast} />
     </>
   )
 }

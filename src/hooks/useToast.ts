@@ -7,8 +7,12 @@ export const useToast = (duration = 5000) => {
 
   useEffect(() => {
     if (!toast) return
-    const timer = setTimeout(() => { setToast(null); }, duration)
-    return () => { clearTimeout(timer); }
+    const timer = setTimeout(() => {
+      setToast(null)
+    }, duration)
+    return () => {
+      clearTimeout(timer)
+    }
   }, [toast, duration])
 
   return { toast, setToast }

@@ -1,13 +1,17 @@
 import { useState, useEffect } from "react"
 import { Outlet } from "react-router-dom"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons"
+import {
+  faChevronLeft,
+  faChevronRight,
+} from "@fortawesome/free-solid-svg-icons"
 import { TopNav } from "./TopNav"
 import { SideBar } from "./SideBar"
 import { Footer } from "./Footer"
 import { AppConfig } from "../config"
 
-const computeIsWideScreen = () => window.innerWidth >= AppConfig.drawerBreakpoint
+const computeIsWideScreen = () =>
+  window.innerWidth >= AppConfig.drawerBreakpoint
 
 const MainLayout = () => {
   const [isWideScreen, setIsWideScreen] = useState(computeIsWideScreen)
@@ -27,7 +31,9 @@ const MainLayout = () => {
     }
 
     window.addEventListener("resize", handleResize)
-    return () => { window.removeEventListener("resize", handleResize); }
+    return () => {
+      window.removeEventListener("resize", handleResize)
+    }
   }, [])
 
   const toggleSidebar = () => {
@@ -41,7 +47,9 @@ const MainLayout = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <TopNav />
-        <div className={`drawer drawer-below-topnav flex-1 ${isSidebarOpen && (!AppConfig.drawerCollapsible || isWideScreen) ? "drawer-open" : ""}`}>
+        <div
+          className={`drawer drawer-below-topnav flex-1 ${isSidebarOpen && (!AppConfig.drawerCollapsible || isWideScreen) ? "drawer-open" : ""}`}
+        >
           <input
             id="sidebar-drawer"
             type="checkbox"
@@ -57,7 +65,9 @@ const MainLayout = () => {
                 style={{ left: isSidebarOpen ? "var(--sidebar-width)" : "0" }}
                 aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
               >
-                <FontAwesomeIcon icon={isSidebarOpen ? faChevronLeft : faChevronRight} />
+                <FontAwesomeIcon
+                  icon={isSidebarOpen ? faChevronLeft : faChevronRight}
+                />
               </button>
             )}
             <Outlet />

@@ -100,7 +100,12 @@ describe("ProtectedRoute", () => {
         <Routes>
           <Route
             path="/admin"
-            element={<ProtectedRoute rolesAllowed={["admin"]} element={<div>Admin content</div>} />}
+            element={
+              <ProtectedRoute
+                rolesAllowed={["admin"]}
+                element={<div>Admin content</div>}
+              />
+            }
           />
           <Route path="/" element={<div>Home page</div>} />
         </Routes>
@@ -117,7 +122,12 @@ describe("ProtectedRoute", () => {
         <Routes>
           <Route
             path="/admin"
-            element={<ProtectedRoute rolesAllowed={["admin"]} element={<div>Admin content</div>} />}
+            element={
+              <ProtectedRoute
+                rolesAllowed={["admin"]}
+                element={<div>Admin content</div>}
+              />
+            }
           />
           <Route path="/" element={<div>Home page</div>} />
         </Routes>
@@ -133,7 +143,10 @@ describe("ProtectedRoute", () => {
     renderWithProviders(
       <MemoryRouter initialEntries={["/apikeys"]}>
         <Routes>
-          <Route path="/apikeys" element={<ProtectedRoute element={<div>API keys</div>} />} />
+          <Route
+            path="/apikeys"
+            element={<ProtectedRoute element={<div>API keys</div>} />}
+          />
         </Routes>
       </MemoryRouter>,
       { preloadedState: authState({ token: "test-token" }) },
@@ -150,6 +163,8 @@ describe("App", () => {
     renderWithProviders(<App />)
 
     expect(document.title).toBe(`${AppConfig.project} v${AppConfig.version}`)
-    expect(screen.getByText(/vite \+ react \+ redux template/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/vite \+ react \+ redux template/i),
+    ).toBeInTheDocument()
   })
 })

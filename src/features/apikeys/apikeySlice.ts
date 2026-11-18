@@ -12,6 +12,7 @@ import type { ApiKey, ApiRoute, Permission } from "./apikeyThunks"
 type ApiKeyState = {
   keys: ApiKey[]
   routes: ApiRoute[]
+  routesError: string | null
   currentKeyPermissions: Permission[] | null
   loading: boolean
   error: string | null
@@ -21,6 +22,7 @@ type ApiKeyState = {
 const initialState: ApiKeyState = {
   keys: [],
   routes: [],
+  routesError: null,
   currentKeyPermissions: null,
   loading: false,
   error: null,
@@ -45,8 +47,17 @@ export const apikeySlice = createSlice({
         state.loading = false
         state.keys = action.payload
       })
+      .addCase(fetchRoutesThunk.pending, state => {
+        state.routesError = null
+      })
       .addCase(fetchRoutesThunk.fulfilled, (state, action) => {
         state.routes = action.payload
+      })
+      .addCase(fetchRoutesThunk.rejected, (state, action) => {
+        // Don't keep stale routes next to the error.
+        state.routes = []
+        state.routesError =
+          action.payload ?? action.error.message ?? "Failed to load routes"
       })
       .addCase(createApiKeyThunk.fulfilled, (state, action) => {
         state.keys.push(action.payload)
@@ -66,7 +77,8 @@ export const apikeySlice = createSlice({
       })
       .addCase(fetchApiKeyRoutesThunk.rejected, (state, action) => {
         state.loading = false
-        state.error = action.error.message ?? "Failed to load API key permissions"
+        state.error =
+          action.error.message ?? "Failed to load API key permissions"
         state.currentKeyPermissions = null
       })
 
@@ -75,7 +87,9 @@ export const apikeySlice = createSlice({
         (action): boolean => (action.type as string).endsWith("/rejected"),
         (state, action) => {
           state.loading = false
-          state.error = (action as { error?: SerializedError }).error?.message ?? "Error occurred"
+          state.error =
+            (action as { error?: SerializedError }).error?.message ??
+            "Error occurred"
         },
       )
   },

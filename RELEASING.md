@@ -23,6 +23,7 @@ This repo follows [SemVer](https://semver.org/) (`MAJOR.MINOR.PATCH`):
    ```
 
    Commit, PR into `dev`, and merge via the GitHub UI. (The bump can't go in the release PR itself — that PR's source branch is `dev`, and nothing is pushed directly to `dev`.)
+
 2. Confirm CI is green on `dev`.
 3. Open a PR from `dev` into `main` via the GitHub UI, titled `Release vX.Y.Z`.
 4. Get the PR reviewed and merge it into `main` via the GitHub UI.

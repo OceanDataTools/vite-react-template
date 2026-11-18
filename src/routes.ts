@@ -13,21 +13,38 @@ export type NavRoute = {
 }
 
 export const navRoutes: NavRoute[] = [
-  { label: "Admin Only", path: "/private", required_roles: ["admin"], navGroup: "side" },
-  { label: "API Keys",   path: "/apikeys", element: ApiKeyManager,    navGroup: "top" },
-  { label: "Private",   path: "/private",                             navGroup: "side" },
-  { label: "Profile",   path: "/profile",  element: ProfileForm,      navGroup: "top" },
-  { label: "Public",    path: "/public",   isPublic: true,            navGroup: "side" },
+  {
+    label: "Admin Only",
+    path: "/private",
+    required_roles: ["admin"],
+    navGroup: "side",
+  },
+  {
+    label: "API Keys",
+    path: "/apikeys",
+    element: ApiKeyManager,
+    navGroup: "top",
+  },
+  { label: "Private", path: "/private", navGroup: "side" },
+  { label: "Profile", path: "/profile", element: ProfileForm, navGroup: "top" },
+  { label: "Public", path: "/public", isPublic: true, navGroup: "side" },
 ]
 
 // Filter routes by nav group and user role, preserving navRoutes order.
-export function getNavRoutes(group: "top" | "side" | "topbar", user?: User | null): NavRoute[] {
+export function getNavRoutes(
+  group: "top" | "side" | "topbar",
+  user?: User | null,
+): NavRoute[] {
   return navRoutes
     .filter(r => r.navGroup === group)
     .filter(r => {
       if (r.isPublic) return true
       if (!user) return false
-      if (r.required_roles && !r.required_roles.some(role => user.roles?.includes(role) ?? false)) return false
+      if (
+        r.required_roles &&
+        !r.required_roles.some(role => user.roles?.includes(role) ?? false)
+      )
+        return false
       return true
     })
 }
@@ -45,7 +62,11 @@ export function filterAndSortRoutes(
     returned_routes = returned_routes.filter(
       ({ isPublic = false, required_roles }) => {
         if (isPublic) return true
-        if (required_roles && !required_roles.some(role => user.roles?.includes(role) ?? false)) return false
+        if (
+          required_roles &&
+          !required_roles.some(role => user.roles?.includes(role) ?? false)
+        )
+          return false
         return true
       },
     )

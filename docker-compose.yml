@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: dev
     ports:
       - "5173:5173" # Vite default port
     volumes:
@@ -13,3 +14,25 @@ services:
     environment:
       - NODE_ENV=development
     command: npm run dev -- --host
+
+  # Production image (nginx serving the built bundle).
+  # Run with: docker compose --profile prod up --build frontend-prod
+  frontend-prod:
+    profiles: [prod]
+    container_name: vite-react-frontend-prod
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: prod
+      args:
+        # Build-time values; empty base URL = same-origin via the /api/ proxy.
+        VITE_SERVER_API_BASE_URL: ${VITE_SERVER_API_BASE_URL:-}
+        VITE_DEFAULT_THEME: ${VITE_DEFAULT_THEME:-light}
+        VITE_ALLOW_SELF_REGISTER: ${VITE_ALLOW_SELF_REGISTER:-true}
+        VITE_PROJECT: ${VITE_PROJECT:-Project}
+        VITE_LAYOUT: ${VITE_LAYOUT:-topnav}
+    ports:
+      - "8080:80"
+    environment:
+      # Runtime: backend to proxy /api/ to. Leave empty to disable the proxy.
+      - API_UPSTREAM=${API_UPSTREAM:-}

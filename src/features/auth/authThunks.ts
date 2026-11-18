@@ -85,13 +85,15 @@ export const loginThunk = createAsyncThunk<
 
       return { token: data.access_token }
     } catch (err) {
-      return rejectWithValue(err instanceof Error ? err.message : "Login failed")
+      return rejectWithValue(
+        err instanceof Error ? err.message : "Login failed",
+      )
     }
   },
 )
 
 // REFRESH TOKEN - no token passed in, relies on httpOnly cookie + fetchWithAuth pattern
- 
+
 export const refreshTokenThunk = createAsyncThunk<
   { token: string },
   undefined,
@@ -110,12 +112,14 @@ export const refreshTokenThunk = createAsyncThunk<
 
     return { token: data.access_token }
   } catch (err) {
-    return thunkAPI.rejectWithValue(err instanceof Error ? err.message : "Refresh failed")
+    return thunkAPI.rejectWithValue(
+      err instanceof Error ? err.message : "Refresh failed",
+    )
   }
 })
 
 // LOGOUT - no token refresh needed, just call endpoint
- 
+
 export const logoutThunk = createAsyncThunk<
   undefined,
   undefined,
@@ -133,12 +137,14 @@ export const logoutThunk = createAsyncThunk<
 
     localStorage.removeItem("token")
   } catch (err) {
-    return thunkAPI.rejectWithValue(err instanceof Error ? err.message : "Logout failed")
+    return thunkAPI.rejectWithValue(
+      err instanceof Error ? err.message : "Logout failed",
+    )
   }
 })
 
 // FETCH USER PROFILE - uses fetchWithAuth so token refresh auto-handled
- 
+
 export const fetchUserProfileThunk = createAsyncThunk<
   User,
   undefined,
@@ -153,7 +159,9 @@ export const fetchUserProfileThunk = createAsyncThunk<
 
     return data
   } catch (err) {
-    return thunkAPI.rejectWithValue(err instanceof Error ? err.message : "Unable to fetch profile")
+    return thunkAPI.rejectWithValue(
+      err instanceof Error ? err.message : "Unable to fetch profile",
+    )
   }
 })
 
@@ -179,12 +187,14 @@ export const updateUserProfileThunk = createAsyncThunk<
 
     return data
   } catch (err) {
-    return thunkAPI.rejectWithValue(err instanceof Error ? err.message : "Update failed")
+    return thunkAPI.rejectWithValue(
+      err instanceof Error ? err.message : "Update failed",
+    )
   }
 })
 
 // UPDATE USER PROFILE PASSWORD - also uses fetchWithAuth for automatic token refresh
- 
+
 export const updateUserProfilePasswordThunk = createAsyncThunk<
   undefined,
   { current_password: string; new_password: string },
@@ -212,7 +222,9 @@ export const updateUserProfilePasswordThunk = createAsyncThunk<
       return
     } catch (err) {
       return thunkAPI.rejectWithValue(
-        err instanceof Error ? err.message : "Network error while changing password",
+        err instanceof Error
+          ? err.message
+          : "Network error while changing password",
       )
     }
   },

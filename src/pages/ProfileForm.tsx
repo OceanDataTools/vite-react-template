@@ -15,11 +15,16 @@ import {
 import { useToast } from "../hooks/useToast"
 import Toast from "../components/Toast"
 
-const checkEmailAvailability = debounce(async (email: string): Promise<{ available: boolean }> => {
-  const res = await fetch(apiUrl(`/users/available?email=${encodeURIComponent(email)}`))
-  if (!res.ok) throw new Error("SERVER_ERROR")
-  return res.json() as Promise<{ available: boolean }>
-}, 400)
+const checkEmailAvailability = debounce(
+  async (email: string): Promise<{ available: boolean }> => {
+    const res = await fetch(
+      apiUrl(`/users/available?email=${encodeURIComponent(email)}`),
+    )
+    if (!res.ok) throw new Error("SERVER_ERROR")
+    return res.json() as Promise<{ available: boolean }>
+  },
+  400,
+)
 
 const ProfileForm = (): JSX.Element => {
   const dispatch = useAppDispatch()
@@ -55,7 +60,10 @@ const ProfileForm = (): JSX.Element => {
           try {
             const json = await checkEmailAvailability(val)
             if (!json.available) {
-              ctx.addIssue({ code: "custom", message: "Email is already taken" })
+              ctx.addIssue({
+                code: "custom",
+                message: "Email is already taken",
+              })
             }
           } catch {
             ctx.addIssue({ code: "custom", message: "Could not check email" })
@@ -176,7 +184,10 @@ const ProfileForm = (): JSX.Element => {
       } else if (
         updateUserProfilePasswordThunk.rejected.match(passwordResult)
       ) {
-        setToast({ message: passwordResult.payload ?? "Password update failed.", type: "error" })
+        setToast({
+          message: passwordResult.payload ?? "Password update failed.",
+          type: "error",
+        })
       } else {
         setToast({ message: "Password update failed.", type: "error" })
       }
@@ -222,108 +233,112 @@ const ProfileForm = (): JSX.Element => {
 
   return (
     <>
-    <div className="max-w-sm mx-auto mt-10">
-      <div className="card bg-base-200 shadow-sm border border-base-300">
-      <div className="card-body py-4 px-5">
-      <h2 className="card-title text-base font-semibold">Edit Profile</h2>
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <fieldset className="fieldset">
-          <legend className="fieldset-legend">Username</legend>
-          <input
-            type="text"
-            {...register("username")}
-            className="input w-full"
-            disabled
-          />
-        </fieldset>
-        <fieldset className="fieldset">
-          <legend className="fieldset-legend">Full Name</legend>
-          <input
-            type="text"
-            {...register("full_name")}
-            className={`input w-full ${errors.full_name ? "input-error" : ""}`}
-            disabled={loading || isSubmitting}
-          />
-          {errors.full_name && (
-            <p className="text-error text-sm mt-1">
-              {errors.full_name.message}
-            </p>
-          )}
-        </fieldset>
-        <fieldset className="fieldset">
-          <legend className="fieldset-legend">Email</legend>
-          <input
-            type="text"
-            {...register("email")}
-            className={`input w-full ${errors.email ? "input-error" : ""}`}
-            disabled={loading || isSubmitting}
-          />
-          {errors.email && (
-            <p className="text-error text-sm mt-1">{errors.email.message}</p>
-          )}
-        </fieldset>
-        <fieldset className="fieldset">
-          <legend className="fieldset-legend">Current Password</legend>
-          <input
-            type="password"
-            {...register("current_password")}
-            className={`input w-full ${errors.current_password ? "input-error" : ""}`}
-            disabled={loading || isSubmitting}
-          />
-          {errors.current_password && (
-            <p className="text-error text-sm mt-1">
-              {errors.current_password.message}
-            </p>
-          )}
-        </fieldset>
-        <fieldset className="fieldset">
-          <legend className="fieldset-legend">New Password</legend>
-          <input
-            type="password"
-            {...register("new_password")}
-            className={`input w-full ${errors.new_password ? "input-error" : ""}`}
-            disabled={loading || isSubmitting}
-          />
-          {errors.new_password && (
-            <p className="text-error text-sm mt-1">
-              {errors.new_password.message}
-            </p>
-          )}
-        </fieldset>
-        <fieldset className="fieldset">
-          <legend className="fieldset-legend">Confirm New Password</legend>
-          <input
-            type="password"
-            {...register("confirm_password")}
-            className={`input w-full ${errors.confirm_password ? "input-error" : ""}`}
-            disabled={loading || isSubmitting}
-          />
-          {errors.confirm_password && (
-            <p className="text-error text-sm mt-1">
-              {errors.confirm_password.message}
-            </p>
-          )}
-        </fieldset>
-        <button
-          type="submit"
-          className="btn btn-primary btn-sm mt-4"
-          disabled={loading || isSubmitting || !isDirty || !isValid}
-        >
-          {loading || isSubmitting ? "Saving..." : "Save Changes"}
-        </button>
-        <button
-          type="button"
-          className="btn btn-secondary btn-sm ml-2 mt-4"
-          disabled={loading || isSubmitting || !isDirty}
-          onClick={onReset}
-        >
-          Reset
-        </button>
-      </form>
+      <div className="max-w-sm mx-auto mt-10">
+        <div className="card bg-base-200 shadow-sm border border-base-300">
+          <div className="card-body py-4 px-5">
+            <h2 className="card-title text-base font-semibold">Edit Profile</h2>
+            <form onSubmit={handleSubmit(onSubmit)} noValidate>
+              <fieldset className="fieldset">
+                <legend className="fieldset-legend">Username</legend>
+                <input
+                  type="text"
+                  {...register("username")}
+                  className="input w-full"
+                  disabled
+                />
+              </fieldset>
+              <fieldset className="fieldset">
+                <legend className="fieldset-legend">Full Name</legend>
+                <input
+                  type="text"
+                  {...register("full_name")}
+                  className={`input w-full ${errors.full_name ? "input-error" : ""}`}
+                  disabled={loading || isSubmitting}
+                />
+                {errors.full_name && (
+                  <p className="text-error text-sm mt-1">
+                    {errors.full_name.message}
+                  </p>
+                )}
+              </fieldset>
+              <fieldset className="fieldset">
+                <legend className="fieldset-legend">Email</legend>
+                <input
+                  type="text"
+                  {...register("email")}
+                  className={`input w-full ${errors.email ? "input-error" : ""}`}
+                  disabled={loading || isSubmitting}
+                />
+                {errors.email && (
+                  <p className="text-error text-sm mt-1">
+                    {errors.email.message}
+                  </p>
+                )}
+              </fieldset>
+              <fieldset className="fieldset">
+                <legend className="fieldset-legend">Current Password</legend>
+                <input
+                  type="password"
+                  {...register("current_password")}
+                  className={`input w-full ${errors.current_password ? "input-error" : ""}`}
+                  disabled={loading || isSubmitting}
+                />
+                {errors.current_password && (
+                  <p className="text-error text-sm mt-1">
+                    {errors.current_password.message}
+                  </p>
+                )}
+              </fieldset>
+              <fieldset className="fieldset">
+                <legend className="fieldset-legend">New Password</legend>
+                <input
+                  type="password"
+                  {...register("new_password")}
+                  className={`input w-full ${errors.new_password ? "input-error" : ""}`}
+                  disabled={loading || isSubmitting}
+                />
+                {errors.new_password && (
+                  <p className="text-error text-sm mt-1">
+                    {errors.new_password.message}
+                  </p>
+                )}
+              </fieldset>
+              <fieldset className="fieldset">
+                <legend className="fieldset-legend">
+                  Confirm New Password
+                </legend>
+                <input
+                  type="password"
+                  {...register("confirm_password")}
+                  className={`input w-full ${errors.confirm_password ? "input-error" : ""}`}
+                  disabled={loading || isSubmitting}
+                />
+                {errors.confirm_password && (
+                  <p className="text-error text-sm mt-1">
+                    {errors.confirm_password.message}
+                  </p>
+                )}
+              </fieldset>
+              <button
+                type="submit"
+                className="btn btn-primary btn-sm mt-4"
+                disabled={loading || isSubmitting || !isDirty || !isValid}
+              >
+                {loading || isSubmitting ? "Saving..." : "Save Changes"}
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm ml-2 mt-4"
+                disabled={loading || isSubmitting || !isDirty}
+                onClick={onReset}
+              >
+                Reset
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
-      </div>
-    </div>
-    <Toast toast={toast} />
+      <Toast toast={toast} />
     </>
   )
 }
